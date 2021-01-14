@@ -9,6 +9,7 @@ export default class AttachmentPickerCombobox extends LightningElement {
     @track value = '';
     @track picklistOptions = [];
     @track isSaving = false;
+    @track loadFinished = false;
     fileNameFieldVisible = false;
     fileName = '';
     selectedRadioValue = '';
@@ -28,6 +29,7 @@ export default class AttachmentPickerCombobox extends LightningElement {
                 this.picklistOptions = [ ...this.picklistOptions, option ];
             });
             error = undefined;
+            this.loadFinished = true;
         } else if (error) {
             console.error(error);
             this.error = error;
