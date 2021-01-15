@@ -61,9 +61,10 @@ public with sharing class ContentVersionController {
                 cv.ReasonForChange = 'Saved from WebViewer';//only for file updates
             } else {
                 for(ContentDocumentLink cdl : 
-                    [   SELECT ContentDocumentId
+                    [   SELECT ContentDocumentId, ContentDocument.Title
                         FROM ContentDocumentLink 
-                        WHERE LinkedEntityId = :recordId ]) {
+                        WHERE LinkedEntityId = :recordId
+                        AND ContentDocument.Title = :pl.title ]) {
                             if(cdl.ContentDocumentId != null) {
                                 cv.ContentDocumentId = cdl.ContentDocumentId;
                             }
