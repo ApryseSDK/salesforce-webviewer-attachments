@@ -10,9 +10,6 @@ export default class AttachmentPickerCombobox extends LightningElement {
     @track picklistOptions = [];
     @track isSaving = false;
     @track loadFinished = false;
-    fileNameFieldVisible = false;
-    fileName = '';
-    selectedRadioValue = '';
     @api recordId;
     @wire(CurrentPageReference) pageRef;
 
@@ -41,7 +38,7 @@ export default class AttachmentPickerCombobox extends LightningElement {
         this.value = event.detail.value;
         fireEvent(this.pageRef, 'blobSelected', this.value);
     }
-    
+
     submitDetails() {
         this.isSaving = true;
         this.saveData();
