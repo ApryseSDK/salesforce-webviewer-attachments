@@ -1,4 +1,4 @@
-public with sharing class ContentVersionController {
+public with sharing class PDFTron_ContentVersionController {
     @AuraEnabled(Cacheable=true)
     public static List<ContentVersionWrapper> getAttachments(String recordId){
         try {
@@ -52,7 +52,7 @@ public with sharing class ContentVersionController {
     @AuraEnabled
     public static void saveDocument(String json, String recordId) {
         try {
-            ContentVersionPayload pl = ContentVersionPayload.parse(json);
+            PDFTron_ContentVersionPayload pl = PDFTron_ContentVersionPayload.parse(json);
             ContentVersion cv = new ContentVersion();
             // 'S' = a Salesforce File
             cv.ContentLocation = 'S';
