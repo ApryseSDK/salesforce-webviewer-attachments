@@ -2,6 +2,7 @@ import { LightningElement, track, wire, api } from 'lwc';
 import { CurrentPageReference } from 'lightning/navigation';
 import { fireEvent } from 'c/pubsub';
 import getAttachments from "@salesforce/apex/ContentVersionController.getAttachments";
+import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class AttachmentPickerCombobox extends LightningElement {
     error;
@@ -31,8 +32,20 @@ export default class AttachmentPickerCombobox extends LightningElement {
             console.error(error);
             this.error = error;
             this.picklistOptions = undefined;
+            let def_message = 'We have encountered an error while loading up your document. '
+
+            this.showNotification('Error', def_message + error.body.message, 'error');
         }
     };
+
+    showNotification(title, message, variant) {
+        const evt = new ShowToastEvent({
+            title: title,
+            message: message,
+            variant: variant,
+        });
+        this.dispatchEvent(evt);
+    }
 
     handleChange(event) {
         this.value = event.detail.value;
