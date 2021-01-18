@@ -6,7 +6,7 @@ import myfilesUrl from '@salesforce/resourceUrl/myfiles';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import mimeTypes from './mimeTypes'
 import { registerListener, unregisterAllListeners } from 'c/pubsub';
-import saveDocument from '@salesforce/apex/ContentVersionController.saveDocument';
+import saveDocument from '@salesforce/apex/PDFTron_ContentVersionController.saveDocument';
 
 function _base64ToArrayBuffer(base64) {
   var binary_string =  window.atob(base64);
@@ -18,7 +18,7 @@ function _base64ToArrayBuffer(base64) {
   return bytes.buffer;
 }
 
-export default class WvInstance extends LightningElement {
+export default class PdftronWvInstance extends LightningElement {
   source = 'My file';
   fullAPI = false;
   @api recordId;
@@ -27,6 +27,8 @@ export default class WvInstance extends LightningElement {
   pageRef;
 
   connectedCallback() {
+    //'/sfc/servlet.shepherd/version/download/0694x000000pEGyAAM'
+    ///servlet/servlet.FileDownload?file=documentId0694x000000pEGyAAM
     registerListener('blobSelected', this.handleBlobSelected, this);
     window.addEventListener('message', this.handleReceiveMessage.bind(this), false);
   }
@@ -110,6 +112,34 @@ export default class WvInstance extends LightningElement {
       }
     }
   }
+	
+	handleCallout(endpoint, token){
+		fetch(endpoint,
+		{
+			method : "GET",
+			headers : {
+				"Content-Type": "application/pdf",
+				"Authorization": token
+			}
+		}).then(function(response) {
+			return response.json();
+		})
+		.then((myJson) =>{
+			// console.log('%%%%'+JSON.stringify(myJson));
+			let doc_list = [];
+			for(let v of Object.values(myJson.results)){
+				console.log('%%%%'+JSON.stringify(v));
+				// console.log('$$$$'+v.title);
+				doc_list.push();
+			}
+			
+			// console.log('*****'+JSON.stringify(movies_list));
+			
+			this.documents = doc_list;
+			
+		})
+		.catch(e=>console.log(e));
+	}
 
   @api
   openDocument() {

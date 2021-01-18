@@ -1,10 +1,10 @@
 import { LightningElement, track, wire, api } from 'lwc';
 import { CurrentPageReference } from 'lightning/navigation';
 import { fireEvent } from 'c/pubsub';
-import getAttachments from "@salesforce/apex/ContentVersionController.getAttachments";
+import getAttachments from "@salesforce/apex/PDFTron_ContentVersionController.getAttachments";
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
-export default class AttachmentPickerCombobox extends LightningElement {
+export default class PdftronAttachmentPickerCombobox extends LightningElement {
     error;
 
     @track value = '';
