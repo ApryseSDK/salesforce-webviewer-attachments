@@ -27,8 +27,6 @@ export default class PdftronWvInstance extends LightningElement {
   pageRef;
 
   connectedCallback() {
-    //'/sfc/servlet.shepherd/version/download/0694x000000pEGyAAM'
-    ///servlet/servlet.FileDownload?file=documentId0694x000000pEGyAAM
     registerListener('blobSelected', this.handleBlobSelected, this);
     window.addEventListener('message', this.handleReceiveMessage.bind(this), false);
   }
@@ -41,7 +39,7 @@ export default class PdftronWvInstance extends LightningElement {
   handleBlobSelected(record) {
     record = JSON.parse(record);
 
-    var blobby = new Blob([_base64ToArrayBuffer(record.body)], {
+    let blobby = new Blob([_base64ToArrayBuffer(record.body)], {
       type: mimeTypes[record.FileExtension]
     });
 
