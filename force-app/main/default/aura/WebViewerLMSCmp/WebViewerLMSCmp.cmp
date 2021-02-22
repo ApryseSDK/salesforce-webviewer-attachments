@@ -1,0 +1,25 @@
+<aura:component implements="flexipage:availableForAllPageTypes" access="global">
+    <aura:attribute type="String" name="myMessage"/>
+    <aura:attribute type="String" name="receivedMessage"/>
+    <aura:attribute name="options" type="List" default="[
+        {'label': 'Tax form (www.s3-link.com/taxform)', 'value': 'www.s3-link.com/taxform'},
+        {'label': 'Legal document (www.s3-link.com/legaldoc)', 'value': 'www.s3-link.com/legaldoc'},
+        {'label': 'Email attachment (www.s3-link.com/emailattachment)', 'value': 'www.s3-link.com/emailattachment'}
+        ]"/>
+    <aura:attribute name="value" type="List"/>
+
+    <lightning:messageChannel type="LMSWebViewer__c" aura:id="lmsWebViewerChannel" onMessage="{!c.handleReceiveMessage}"/>
+
+    <lightning:card title="Aura Component" iconName="custom:custom18">
+        <lightning:checkboxGroup name="Checkbox Group"
+                                 label="Select Documents"
+                                 options="{! v.options }"
+                                 value="{! v.value }"
+                                 onchange="{! c.handleChange }"/>
+
+        <div class="slds-m-around_medium">
+            <p>Latest Received Message</p>
+            <lightning:formattedText value="{!v.receivedMessage}"/>
+        </div>
+    </lightning:card>
+</aura:component>	

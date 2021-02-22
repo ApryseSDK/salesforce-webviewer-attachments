@@ -3,22 +3,28 @@ import { CurrentPageReference } from 'lightning/navigation';
 import { loadScript } from 'lightning/platformResourceLoader';
 import libUrl from '@salesforce/resourceUrl/lib';
 import myfilesUrl from '@salesforce/resourceUrl/myfiles';
+import { publish, createMessageContext, releaseMessageContext, subscribe, unsubscribe } from 'lightning/messageService';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import mimeTypes from './mimeTypes'
+import lmsWebviewer from "@salesforce/messageChannel/LMSWebViewer__c";
 import { registerListener, unregisterAllListeners } from 'c/pubsub';
 import saveDocument from '@salesforce/apex/PDFTron_ContentVersionController.saveDocument';
 
 function _base64ToArrayBuffer(base64) {
-  var binary_string =  window.atob(base64);
+  var binary_string = window.atob(base64);
   var len = binary_string.length;
-  var bytes = new Uint8Array( len );
-  for (var i = 0; i < len; i++)        {
-      bytes[i] = binary_string.charCodeAt(i);
+  var bytes = new Uint8Array(len);
+  for (var i = 0; i < len; i++) {
+    bytes[i] = binary_string.charCodeAt(i);
   }
   return bytes.buffer;
 }
 
 export default class PdftronWvInstance extends LightningElement {
+  @track receivedMessage = '';
+  channel;
+  context = createMessageContext();
+
   source = 'My file';
   fullAPI = false;
   @api recordId;
@@ -26,16 +32,42 @@ export default class PdftronWvInstance extends LightningElement {
   @wire(CurrentPageReference)
   pageRef;
 
+  constructor() {
+    super();
+  }
+
   connectedCallback() {
     //'/sfc/servlet.shepherd/version/download/0694x000000pEGyAAM'
     ///servlet/servlet.FileDownload?file=documentId0694x000000pEGyAAM
     registerListener('blobSelected', this.handleBlobSelected, this);
     window.addEventListener('message', this.handleReceiveMessage.bind(this), false);
+    this.handleSubscribe();
   }
 
   disconnectedCallback() {
     unregisterAllListeners(this);
     window.removeEventListener('message', this.handleReceiveMessage, true);
+    releaseMessageContext(this.context);
+    this.handleUnsubscribe();
+  }
+
+  handleSubscribe() {
+    const parentPage = this;
+    this.channel = subscribe(this.context, lmsWebviewer, (event) => {
+      if (event != null) {
+        //handle date within LWC
+        const message = event.messageBody;
+        const source = event.source;
+        parentPage.receivedMessage = 'Links to be loaded: ' + message + '\nSent From: ' + source;
+        
+        //post data to WebViewer iframe
+        parentPage.iframeWindow.postMessage({ type: 'LMS_RECEIVED', message }, '*');
+      }
+    });
+  }
+
+  handleUnsubscribe() {
+    unsubscribe(this.channel);
   }
 
   handleBlobSelected(record) {
@@ -51,21 +83,21 @@ export default class PdftronWvInstance extends LightningElement {
       filename: record.cv.Title + "." + record.cv.FileExtension,
       documentId: record.cv.Id
     };
-    this.iframeWindow.postMessage({type: 'OPEN_DOCUMENT_BLOB', payload} , '*');
+    this.iframeWindow.postMessage({ type: 'OPEN_DOCUMENT_BLOB', payload }, '*');
   }
 
   renderedCallback() {
     var self = this;
     if (this.uiInitialized) {
-        return;
+      return;
     }
     this.uiInitialized = true;
 
     Promise.all([
-        loadScript(self, libUrl + '/webviewer.min.js')
+      loadScript(self, libUrl + '/webviewer.min.js')
     ])
-    .then(() => this.initUI())
-    .catch(console.error);
+      .then(() => this.initUI())
+      .catch(console.error);
   }
 
   initUI() {
@@ -112,34 +144,34 @@ export default class PdftronWvInstance extends LightningElement {
       }
     }
   }
-	
-	handleCallout(endpoint, token){
-		fetch(endpoint,
-		{
-			method : "GET",
-			headers : {
-				"Content-Type": "application/pdf",
-				"Authorization": token
-			}
-		}).then(function(response) {
-			return response.json();
-		})
-		.then((myJson) =>{
-			// console.log('%%%%'+JSON.stringify(myJson));
-			let doc_list = [];
-			for(let v of Object.values(myJson.results)){
-				console.log('%%%%'+JSON.stringify(v));
-				// console.log('$$$$'+v.title);
-				doc_list.push();
-			}
-			
-			// console.log('*****'+JSON.stringify(movies_list));
-			
-			this.documents = doc_list;
-			
-		})
-		.catch(e=>console.log(e));
-	}
+
+  handleCallout(endpoint, token) {
+    fetch(endpoint,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/pdf",
+          "Authorization": token
+        }
+      }).then(function (response) {
+        return response.json();
+      })
+      .then((myJson) => {
+        // console.log('%%%%'+JSON.stringify(myJson));
+        let doc_list = [];
+        for (let v of Object.values(myJson.results)) {
+          console.log('%%%%' + JSON.stringify(v));
+          // console.log('$$$$'+v.title);
+          doc_list.push();
+        }
+
+        // console.log('*****'+JSON.stringify(movies_list));
+
+        this.documents = doc_list;
+
+      })
+      .catch(e => console.log(e));
+  }
 
   @api
   openDocument() {
@@ -147,6 +179,6 @@ export default class PdftronWvInstance extends LightningElement {
 
   @api
   closeDocument() {
-    this.iframeWindow.postMessage({type: 'CLOSE_DOCUMENT' }, '*')
+    this.iframeWindow.postMessage({ type: 'CLOSE_DOCUMENT' }, '*')
   }
 }
