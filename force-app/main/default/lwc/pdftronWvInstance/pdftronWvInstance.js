@@ -59,7 +59,7 @@ export default class PdftronWvInstance extends LightningElement {
         const message = event.messageBody;
         const source = event.source;
         parentPage.receivedMessage = 'Links to be loaded: ' + message + '\nSent From: ' + source;
-        
+
         //post data to WebViewer iframe
         parentPage.iframeWindow.postMessage({ type: 'LMS_RECEIVED', message }, '*');
       }
@@ -139,38 +139,13 @@ export default class PdftronWvInstance extends LightningElement {
             console.error(JSON.stringify(error));
           });
           break;
+        case 'TAB_ACTIVE':
+            me.iframeWindow.postMessage({ type: 'DOCUMENT_SAVED', response }, '*');
+          break;
         default:
           break;
       }
     }
-  }
-
-  handleCallout(endpoint, token) {
-    fetch(endpoint,
-      {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/pdf",
-          "Authorization": token
-        }
-      }).then(function (response) {
-        return response.json();
-      })
-      .then((myJson) => {
-        // console.log('%%%%'+JSON.stringify(myJson));
-        let doc_list = [];
-        for (let v of Object.values(myJson.results)) {
-          console.log('%%%%' + JSON.stringify(v));
-          // console.log('$$$$'+v.title);
-          doc_list.push();
-        }
-
-        // console.log('*****'+JSON.stringify(movies_list));
-
-        this.documents = doc_list;
-
-      })
-      .catch(e => console.log(e));
   }
 
   @api

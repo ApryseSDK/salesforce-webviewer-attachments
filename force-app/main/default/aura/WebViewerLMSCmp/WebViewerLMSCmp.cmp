@@ -11,6 +11,7 @@
     <lightning:messageChannel type="LMSWebViewer__c" aura:id="lmsWebViewerChannel" onMessage="{!c.handleReceiveMessage}"/>
 
     <lightning:card title="Aura Component" iconName="custom:custom18">
+        <div>{!v.value}</div>
         <lightning:checkboxGroup name="Checkbox Group"
                                  label="Select Documents"
                                  options="{! v.options }"

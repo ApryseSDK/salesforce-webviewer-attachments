@@ -18,8 +18,9 @@
     handleChange: function (component, event) {
         const payload = {
             source: "Aura Component",
-            messageBody: event.getParam('value')
+            link: event.getParam('value')
         };
+
         component.find("lmsWebViewerChannel").publish(payload);
     }
 })
