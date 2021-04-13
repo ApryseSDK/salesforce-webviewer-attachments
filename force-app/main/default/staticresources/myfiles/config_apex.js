@@ -106,10 +106,10 @@ function receiveMessage(event) {
         }, 2000)
         break;
       case 'LMS_RECEIVED':
-        readerControl.showErrorMessage('Link received: ' + event.data.message);
-        setTimeout(() => {
-          readerControl.closeElements(['errorModal', 'loadingModal'])
-        }, 2000)
+        event.target.readerControl.loadDocument(event.data.message, {
+          filename: 'MyFile.pdf',
+          withCredentials: false
+        });
         break;
       case 'CLOSE_DOCUMENT':
         event.target.readerControl.closeDocument()

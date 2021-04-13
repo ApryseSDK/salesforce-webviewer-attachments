@@ -1,26 +1,14 @@
 ({
-    handleClick: function(component, event, helper) {
-        let myMessage = component.get("v.myMessage");
-        const payload = {
-            source: "Aura Component",
-            messageBody: myMessage
-        };
-        component.find("lmsWebViewerChannel").publish(payload);
-    },
-    handleReceiveMessage: function (component, event, helper) {
-        if (event != null) {
-            const message = event.getParam('messageBody');
-            const source = event.getParam('source');
-
-            component.set("v.receivedMessage", 'Message: ' + message + '. Sent From: ' + source);
+    
+    getFileLink: function (component, event, helper) {
+        if(event != null) {
+            var message = event.getParam('messageBody');
+            var source = event.getParam('source');
+            component.set("v.refreshWebViewer", true);
+            helper.getFileLink(component, event, helper, message);
         }
     },
-    handleChange: function (component, event) {
-        const payload = {
-            source: "Aura Component",
-            link: event.getParam('value')
-        };
-
-        component.find("lmsWebViewerChannel").publish(payload);
+    
+    showPDFWebViwerMessage : function (component, event, helper) {
     }
 })

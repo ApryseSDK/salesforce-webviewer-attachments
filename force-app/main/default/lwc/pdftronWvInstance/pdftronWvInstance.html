@@ -1,3 +1,9 @@
 <template>
-    <div class="pdf_viewer slds-grid slds-grid--vertical-stretch" id='pdf_viewer'></div>
+    <lightning-card>
+        <div id="cardContainer">
+            <div id="wvContainer">
+                <c-pdftron-wv-instance record-id={recordId}></c-pdftron-wv-instance>
+            </div>
+        </div>
+    </lightning-card>
 </template>
