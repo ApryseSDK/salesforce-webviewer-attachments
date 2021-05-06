@@ -19,16 +19,18 @@ function _base64ToArrayBuffer(base64) {
 }
 
 export default class PdftronWvInstance extends LightningElement {
+  //initialization options
+  fullAPI = true;
+  enableRedaction = true;
+  enableFilePicker = true;
+
   source = 'My file';
-  fullAPI = false;
   @api recordId;
 
   @wire(CurrentPageReference)
   pageRef;
 
   connectedCallback() {
-    //'/sfc/servlet.shepherd/version/download/0694x000000pEGyAAM'
-    ///servlet/servlet.FileDownload?file=documentId0694x000000pEGyAAM
     registerListener('blobSelected', this.handleBlobSelected, this);
     window.addEventListener('message', this.handleReceiveMessage.bind(this), false);
   }
