@@ -62,6 +62,11 @@ async function saveDocument() {
   parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*');
 }
 
+window.addEventListener('documentLoaded', async () => {
+  console.log("custom.currentUser", custom.currentUser);
+  let annotManager = await docViewer.getAnnotationManager().setCurrentUser(custom.currentUser.FirstName + ' ' + custom.currentUser.LastName);
+});
+
 window.addEventListener('viewerLoaded', async function () {
   /**
    * On keydown of either the button combination Ctrl+S or Cmd+S, invoke the
