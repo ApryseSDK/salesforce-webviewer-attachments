@@ -62,10 +62,6 @@ async function saveDocument() {
   parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*');
 }
 
-async function setUser(username) {
-  readerControl.docViewer.getAnnotationManager().setCurrentUser(username);
-};
-
 window.addEventListener('viewerLoaded', async function () {
   /**
    * On keydown of either the button combination Ctrl+S or Cmd+S, invoke the
@@ -93,7 +89,7 @@ window.addEventListener('viewerLoaded', async function () {
   // When the viewer has loaded, this makes the necessary call to get the
   // pdftronWvInstance code to pass User Record information to this config file
   // to invoke annotManager.setCurrentUser
-  parent.postMessage({ type: 'SET_USER' }, '*');
+  readerControl.docViewer.getAnnotationManager().setCurrentUser(custom.username);
 });
 
 window.addEventListener("message", receiveMessage, false);
@@ -116,9 +112,6 @@ function receiveMessage(event) {
         break;
       case 'CLOSE_DOCUMENT':
         event.target.readerControl.closeDocument()
-        break;
-      case 'SET_USER':
-        setUser(event.data.username);
         break;
       default:
         break;

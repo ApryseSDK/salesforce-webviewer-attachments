@@ -76,10 +76,14 @@ export default class PdftronWvInstance extends LightningElement {
   }
 
   initUI() {
+    const firstName = this.record.data.fields.FirstName.value;
+    const lastName = this.record.data.fields.LastName.value;
+    const username = `${firstName} ${lastName}`;
     var myObj = {
       libUrl: libUrl,
       fullAPI: this.fullAPI || false,
       namespacePrefix: '',
+      username,
     };
     var url = myfilesUrl + '/webviewer-demo-annotated.pdf';
 
@@ -113,12 +117,6 @@ export default class PdftronWvInstance extends LightningElement {
           }).catch(error => {
             console.error(JSON.stringify(error));
           });
-          break;
-        case 'SET_USER':
-          const firstName = this.userRecord.data.fields.FirstName.value;
-          const lastName = this.userRecord.data.fields.LastName.value;
-          const username = `${firstName} ${lastName}`;
-          me.iframeWindow.postMessage({ type: 'SET_USER', username }, '*');
           break;
         default:
           break;
