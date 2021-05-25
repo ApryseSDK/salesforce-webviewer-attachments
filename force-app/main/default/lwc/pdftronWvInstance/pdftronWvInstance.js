@@ -7,6 +7,8 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import mimeTypes from './mimeTypes'
 import { registerListener, unregisterAllListeners } from 'c/pubsub';
 import saveDocument from '@salesforce/apex/PDFTron_ContentVersionController.saveDocument';
+import Id from '@salesforce/user/Id';
+import { getRecord } from 'lightning/uiRecordApi';
 
 function _base64ToArrayBuffer(base64) {
   var binary_string =  window.atob(base64);
@@ -29,6 +31,9 @@ export default class PdftronWvInstance extends LightningElement {
 
   @wire(CurrentPageReference)
   pageRef;
+
+  @wire(getRecord, { recordId: Id, fields: ['User.FirstName', 'User.LastName']})
+  userRecord;
 
   connectedCallback() {
     registerListener('blobSelected', this.handleBlobSelected, this);
@@ -71,10 +76,14 @@ export default class PdftronWvInstance extends LightningElement {
   }
 
   initUI() {
+    const firstName = this.record.data.fields.FirstName.value;
+    const lastName = this.record.data.fields.LastName.value;
+    const username = `${firstName} ${lastName}`;
     var myObj = {
       libUrl: libUrl,
       fullAPI: this.fullAPI || false,
       namespacePrefix: '',
+      username,
     };
     var url = myfilesUrl + '/webviewer-demo-annotated.pdf';
 

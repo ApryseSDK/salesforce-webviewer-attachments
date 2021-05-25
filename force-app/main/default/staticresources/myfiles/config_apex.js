@@ -85,6 +85,11 @@ window.addEventListener('viewerLoaded', async function () {
     }
     header.get('viewControlsButton').insertBefore(myCustomButton);
   });
+
+  // When the viewer has loaded, this makes the necessary call to get the
+  // pdftronWvInstance code to pass User Record information to this config file
+  // to invoke annotManager.setCurrentUser
+  readerControl.docViewer.getAnnotationManager().setCurrentUser(custom.username);
 });
 
 window.addEventListener("message", receiveMessage, false);
