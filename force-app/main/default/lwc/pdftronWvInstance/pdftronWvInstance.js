@@ -7,6 +7,8 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import mimeTypes from './mimeTypes'
 import { registerListener, unregisterAllListeners } from 'c/pubsub';
 import saveDocument from '@salesforce/apex/PDFTron_ContentVersionController.saveDocument';
+import Id from '@salesforce/user/Id';
+import { getRecord } from 'lightning/uiRecordApi';
 
 function _base64ToArrayBuffer(base64) {
   var binary_string =  window.atob(base64);
@@ -29,6 +31,9 @@ export default class PdftronWvInstance extends LightningElement {
 
   @wire(CurrentPageReference)
   pageRef;
+
+  @wire(getRecord, { recordId: Id, fields: ['User.FirstName', 'User.LastName']})
+  userRecord;
 
   connectedCallback() {
     registerListener('blobSelected', this.handleBlobSelected, this);
@@ -108,6 +113,12 @@ export default class PdftronWvInstance extends LightningElement {
           }).catch(error => {
             console.error(JSON.stringify(error));
           });
+          break;
+        case 'SET_USER':
+          const firstName = this.userRecord.data.fields.FirstName.value;
+          const lastName = this.userRecord.data.fields.LastName.value;
+          const username = `${firstName} ${lastName}`;
+          me.iframeWindow.postMessage({ type: 'SET_USER', username }, '*');
           break;
         default:
           break;
