@@ -76,8 +76,8 @@ export default class PdftronWvInstance extends LightningElement {
   }
 
   initUI() {
-    const firstName = this.record.data.fields.FirstName.value;
-    const lastName = this.record.data.fields.LastName.value;
+    const firstName = this.userRecord.data.fields.FirstName.value;
+    const lastName = this.userRecord.data.fields.LastName.value;
     const username = `${firstName} ${lastName}`;
     var myObj = {
       libUrl: libUrl,
