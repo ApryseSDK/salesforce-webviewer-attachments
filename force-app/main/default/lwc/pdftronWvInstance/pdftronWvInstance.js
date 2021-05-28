@@ -32,8 +32,18 @@ export default class PdftronWvInstance extends LightningElement {
   @wire(CurrentPageReference)
   pageRef;
 
-  @wire(getRecord, { recordId: Id, fields: ['User.FirstName', 'User.LastName']})
   userRecord;
+
+  @wire(getRecord, { recordId: Id, fields: ['User.FirstName', 'User.LastName']})
+  getUserRecord({ error, data }) {
+    if (data) {
+      this.userRecord = data;
+    } else if (error) {
+      console.error(error);
+      this.showNotification('Error', error.body.message, 'error');
+    }
+  }
+
 
   connectedCallback() {
     registerListener('blobSelected', this.handleBlobSelected, this);
@@ -76,8 +86,8 @@ export default class PdftronWvInstance extends LightningElement {
   }
 
   initUI() {
-    const firstName = this.userRecord.data.fields.FirstName.value;
-    const lastName = this.userRecord.data.fields.LastName.value;
+    const firstName = this.userRecord.fields.FirstName.value;
+    const lastName = this.userRecord.fields.LastName.value;
     const username = `${firstName} ${lastName}`;
     var myObj = {
       libUrl: libUrl,
