@@ -89,6 +89,16 @@ public with sharing class PDFTron_ContentVersionController {
             
             system.debug('### Upserting cv: ' + cv);
             upsert cv; 
+            
+            // Check document
+            if(cv.ContentDocumentId == null && String.isNotBlank(recordId)){
+                // Get the content versions
+        		List<ContentVersion> contentVersions = [SELECT Id, ContentDocumentId FROM ContentVersion WHERE Id =: cv.Id LIMIT 1];
+        
+            	// Creatr content document link
+        		ContentDocumentLink contentDocumentLink = new ContentDocumentLink(LinkedEntityId = recordId, ContentDocumentId = contentVersions[0].ContentDocumentId, ShareType = 'V');
+                insert contentDocumentLink;
+            }
         } catch (Exception e) {
             system.debug('### ERROR: ' + e.getMessage());
             throw new AuraHandledException(e.getMessage());
@@ -99,7 +109,7 @@ public with sharing class PDFTron_ContentVersionController {
         @AuraEnabled
         public String name {get; set;}
         @AuraEnabled
-        public String body {get; set;}
+        public String body {get; set;} 
         @AuraEnabled
         public ContentVersion cv;
         
