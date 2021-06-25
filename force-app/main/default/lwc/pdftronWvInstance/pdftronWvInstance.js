@@ -73,10 +73,13 @@ export default class PdftronWvInstance extends LightningElement {
 
   renderedCallback() {
     var self = this;
-    if (this.uiInitialized) {
+    if (this.uiInitialized || !this.userRecord) {
         return;
     }
-    this.uiInitialized = true;
+
+    if(this.userRecord) {
+      this.uiInitialized = true;
+    }
 
     Promise.all([
         loadScript(self, libUrl + '/webviewer.min.js')
