@@ -34,7 +34,6 @@ export default class PdftronWvInstance extends LightningElement {
   username;
 
   connectedCallback() {
-    console.log("connectedCallback!")
     registerListener('blobSelected', this.handleBlobSelected, this);
     window.addEventListener('message', this.handleReceiveMessage.bind(this), false);
   }
@@ -61,7 +60,6 @@ export default class PdftronWvInstance extends LightningElement {
   }
 
   renderedCallback() {
-    console.log("renderedCallback!")
     var self = this;
     if (this.uiInitialized) {
         return;
@@ -96,7 +94,6 @@ export default class PdftronWvInstance extends LightningElement {
       namespacePrefix: '',
       username: this.username,
     };
-    console.log("myObj.username" + myObj.username);
     var url = myfilesUrl + '/webviewer-demo-annotated.pdf';
 
     const viewerElement = this.template.querySelector('div')
