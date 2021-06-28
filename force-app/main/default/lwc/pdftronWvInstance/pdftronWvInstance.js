@@ -7,8 +7,7 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import mimeTypes from './mimeTypes'
 import { registerListener, unregisterAllListeners } from 'c/pubsub';
 import saveDocument from '@salesforce/apex/PDFTron_ContentVersionController.saveDocument';
-import Id from '@salesforce/user/Id';
-import { getRecord } from 'lightning/uiRecordApi';
+import getUser from '@salesforce/apex/PDFTron_ContentVersionController.getUser';
 
 function _base64ToArrayBuffer(base64) {
   var binary_string =  window.atob(base64);
@@ -32,18 +31,7 @@ export default class PdftronWvInstance extends LightningElement {
   @wire(CurrentPageReference)
   pageRef;
 
-  userRecord;
-
-  @wire(getRecord, { recordId: Id, fields: ['User.FirstName', 'User.LastName']})
-  getUserRecord({ error, data }) {
-    if (data) {
-      this.userRecord = data;
-    } else if (error) {
-      console.error(error);
-      this.showNotification('Error', error.body.message, 'error');
-    }
-  }
-
+  username;
 
   connectedCallback() {
     registerListener('blobSelected', this.handleBlobSelected, this);
@@ -84,19 +72,30 @@ export default class PdftronWvInstance extends LightningElement {
     Promise.all([
         loadScript(self, libUrl + '/webviewer.min.js')
     ])
-    .then(() => this.initUI())
+    .then(() => this.handleInitWithCurrentUser())
     .catch(console.error);
   }
 
+  handleInitWithCurrentUser() {
+    getUser()
+    .then((result) => {
+        this.username = result;
+        this.error = undefined;
+
+        this.initUI();
+    })
+    .catch((error) => {
+      console.error(error);
+      this.showNotification('Error', error.body.message, 'error');
+    });
+  }
+
   initUI() {
-    const firstName = this.userRecord.fields.FirstName.value;
-    const lastName = this.userRecord.fields.LastName.value;
-    const username = `${firstName} ${lastName}`;
     var myObj = {
       libUrl: libUrl,
       fullAPI: this.fullAPI || false,
       namespacePrefix: '',
-      username,
+      username: this.username,
     };
     var url = myfilesUrl + '/webviewer-demo-annotated.pdf';
 

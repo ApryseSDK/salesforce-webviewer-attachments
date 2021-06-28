@@ -1,4 +1,17 @@
 public with sharing class PDFTron_ContentVersionController {
+    @AuraEnabled
+    public static string getUser() {
+        try {
+            User currentUser = [SELECT FirstName,LastName
+            From User
+            WHERE username = :UserInfo.getUsername()];
+
+            return currentUser.FirstName + ' ' +  currentUser.LastName;
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
     @AuraEnabled(Cacheable=true)
     public static List<ContentVersionWrapper> getAttachments(String recordId){
         try {
