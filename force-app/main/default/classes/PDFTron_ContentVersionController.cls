@@ -13,7 +13,7 @@ public with sharing class PDFTron_ContentVersionController {
     }
 
     @AuraEnabled(Cacheable=true)
-    public static List<ContentVersionWrapper> getAttachments(String recordId){
+    public static List<ContentVersionWrapper> getAttachments(String recordId) {
         try {
             List<String> cdIdList = new List<String> ();
             List<ContentVersionWrapper> cvwList = new List<ContentVersionWrapper> ();
@@ -45,13 +45,13 @@ public with sharing class PDFTron_ContentVersionController {
             }
             //Use links to get attachments
             for(ContentVersion cv : 
-                    [   SELECT Id, Title,FileExtension, VersionData 
+                    [   SELECT Id, Title,FileExtension, VersionData
                         FROM ContentVersion 
                         WHERE ContentDocumentId IN :cdIdList 
                         AND IsLatest = true ]) {
                 if(fileFormats.contains(cv.FileExtension.toLowerCase())) {
                     System.debug('Converting CV: ' + cv.Id);
-                    cvwList.add(new ContentVersionWrapper(cv));
+                    cvwList.add(new ContentVersionWrapper(cv, cv.VersionData));
                     System.debug('Completed CV Conversion:' + cv);
                 }
             }
@@ -63,32 +63,37 @@ public with sharing class PDFTron_ContentVersionController {
     }
 
     @AuraEnabled
-    public static void saveDocument(String json, String recordId) {
+    public static void saveDocument(String json, String recordId, String cvId) {
         try {
+            //parse annotated document payload and create new ContentVersion
             PDFTron_ContentVersionPayload pl = PDFTron_ContentVersionPayload.parse(json);
-            ContentVersion cv = new ContentVersion();
-            // 'S' = a Salesforce File
-            cv.ContentLocation = 'S';
-            if(pl.contentDocumentId != null) {
-                cv.ContentDocumentId = pl.contentDocumentId;
-                cv.ReasonForChange = 'Saved from WebViewer';//only for file updates
+            ContentVersion annotatedCv = new ContentVersion();
+
+            //retrieve original document before annotation
+            List<ContentVersion> cvList = [SELECT ContentDocumentId FROM ContentVersion WHERE Id = :cvId];
+
+            if(cvList.size() == 1) {
+                //retrieve and delete original document
+                List<ContentDocument> originalDocument = [SELECT Id FROM ContentDocument WHERE Id = :cvList[0].ContentDocumentId];
+                delete originalDocument;
             } else {
-                for(ContentDocumentLink cdl : 
-                    [   SELECT ContentDocumentId, ContentDocument.Title
-                        FROM ContentDocumentLink 
-                        WHERE LinkedEntityId = :recordId
-                        AND ContentDocument.Title = :pl.title ]) {
-                            if(cdl.ContentDocumentId != null) {
-                                cv.ContentDocumentId = cdl.ContentDocumentId;
-                            }
-                        }
+                System.debug('Could not retrieve record for ' + cvId);
             }
-            cv.VersionData = EncodingUtil.base64Decode(pl.base64Data);
-            cv.Title = pl.title;
-            cv.PathOnClient = pl.filename;
-            
-            system.debug('### Upserting cv: ' + cv);
-            upsert cv; 
+            //build document blob
+            annotatedCv.VersionData = EncodingUtil.base64Decode(pl.base64Data);
+            annotatedCv.Title = pl.title;
+            annotatedCv.PathOnClient = pl.filename;
+
+            insert annotatedCv; 
+
+            if(annotatedCv.ContentDocumentId == null && String.isNotBlank(recordId)) {
+                //get the content version since ContentDocumentId is defined after insert
+                List<ContentVersion> contentVersions = [SELECT Id, ContentDocumentId FROM ContentVersion WHERE Id =: annotatedCv.Id LIMIT 1];
+
+                //link record with document
+                ContentDocumentLink contentDocumentLink = new ContentDocumentLink(LinkedEntityId = recordId, ContentDocumentId = contentVersions[0].ContentDocumentId, ShareType = 'V');
+                insert contentDocumentLink;
+            }
         } catch (Exception e) {
             system.debug('### ERROR: ' + e.getMessage());
             throw new AuraHandledException(e.getMessage());
@@ -103,10 +108,15 @@ public with sharing class PDFTron_ContentVersionController {
         @AuraEnabled
         public ContentVersion cv;
         
+        public ContentVersionWrapper(ContentVersion contentVer, Blob fileData) {
+            this.cv = contentVer;
+            this.name = contentVer.Title + '.' + contentVer.FileExtension;
+            this.body = EncodingUtil.base64Encode(fileData);
+        }
+
         public ContentVersionWrapper(ContentVersion contentVer) {
             this.cv = contentVer;
             this.name = contentVer.Title + '.' + contentVer.FileExtension;
-            this.body = EncodingUtil.base64Encode(contentVer.VersionData);
         }
     }
 }
