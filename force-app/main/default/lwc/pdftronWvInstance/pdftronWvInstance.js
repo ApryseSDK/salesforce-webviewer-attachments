@@ -5,7 +5,7 @@ import libUrl from '@salesforce/resourceUrl/lib';
 import myfilesUrl from '@salesforce/resourceUrl/myfiles';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import mimeTypes from './mimeTypes'
-import { registerListener, unregisterAllListeners } from 'c/pubsub';
+import { fireEvent, registerListener, unregisterAllListeners } from 'c/pubsub';
 import saveDocument from '@salesforce/apex/PDFTron_ContentVersionController.saveDocument';
 import getUser from '@salesforce/apex/PDFTron_ContentVersionController.getUser';
 
@@ -121,9 +121,12 @@ export default class PdftronWvInstance extends LightningElement {
     if (event.isTrusted && typeof event.data === 'object') {
       switch (event.data.type) {
         case 'SAVE_DOCUMENT':
-          saveDocument({ json: JSON.stringify(event.data.payload), recordId: this.recordId }).then((response) => {
+          const cvId = event.data.payload.contentDocumentId;
+          saveDocument({ json: JSON.stringify(event.data.payload), recordId: this.recordId ? this.recordId : '', cvId: cvId }).then((response) => {
             me.iframeWindow.postMessage({ type: 'DOCUMENT_SAVED', response }, '*')
+            fireEvent(this.pageRef, 'refreshApex', 'refresh');
           }).catch(error => {
+            console.error(event.data.payload.contentDocumentId);
             console.error(JSON.stringify(error));
           });
           break;
