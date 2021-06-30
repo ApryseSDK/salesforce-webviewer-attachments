@@ -110,8 +110,11 @@ function receiveMessage(event) {
         }, 2000)
         break;
       case 'LMS_RECEIVED':
+        const fileUrl = event.data.message;
+        const fileSubstring = fileUrl.substring(fileUrl.lastIndexOf('/') + 1 , fileUrl.indexOf('?'));
+  
         event.target.readerControl.loadDocument(event.data.message, {
-          filename: 'MyFile.pdf',
+          filename: fileSubstring,
           withCredentials: false
         });
         break;
