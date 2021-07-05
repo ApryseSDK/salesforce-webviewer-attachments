@@ -109,12 +109,9 @@ function receiveMessage(event) {
           readerControl.closeElements(['errorModal', 'loadingModal'])
         }, 2000)
         break;
-      case 'LMS_RECEIVED':
-        const fileUrl = event.data.message;
-        const fileSubstring = fileUrl.substring(fileUrl.lastIndexOf('/') + 1 , fileUrl.indexOf('?'));
-  
+      case 'LMS_RECEIVED':  
         event.target.readerControl.loadDocument(event.data.message, {
-          filename: fileSubstring,
+          filename: event.data.filename,
           withCredentials: false
         });
         break;

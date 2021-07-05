@@ -60,8 +60,14 @@ export default class PdftronWvInstance extends LightningElement {
         const source = event.source;
         parentPage.receivedMessage = 'Links to be loaded: ' + message + '\nSent From: ' + source;
 
+        const payload = {
+          message: event.messageBody,
+          filename: event.filename,
+          source: event.source
+        }
+
         //post data to WebViewer iframe
-        parentPage.iframeWindow.postMessage({ type: 'LMS_RECEIVED', message }, '*');
+        parentPage.iframeWindow.postMessage({ type: 'LMS_RECEIVED', payload }, '*');
       }
     });
   }
