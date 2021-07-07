@@ -26,7 +26,7 @@ export default class PdftronWvInstance extends LightningElement {
   context = createMessageContext();
 
   source = 'My file';
-  fullAPI = false;
+  fullAPI = true;
   @api recordId;
 
   @wire(CurrentPageReference)

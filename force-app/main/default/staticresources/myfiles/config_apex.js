@@ -110,8 +110,8 @@ function receiveMessage(event) {
         }, 2000)
         break;
       case 'LMS_RECEIVED':  
-        event.target.readerControl.loadDocument(event.data.message, {
-          filename: event.data.filename,
+        event.target.readerControl.loadDocument(event.data.payload.message, {
+          filename: event.data.payload.filename,
           withCredentials: false
         });
         break;
