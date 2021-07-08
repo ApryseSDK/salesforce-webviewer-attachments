@@ -104,7 +104,8 @@ function receiveMessage(event) {
         event.target.readerControl.loadDocument(blob, { extension, filename, documentId })
         break;
       case 'DOCUMENT_SAVED':
-        readerControl.showErrorMessage('Document saved!')
+        console.log(`${JSON.stringify(event.data)}`);
+        readerControl.showErrorMessage('Document saved ')
         setTimeout(() => {
           readerControl.closeElements(['errorModal', 'loadingModal'])
         }, 2000)
