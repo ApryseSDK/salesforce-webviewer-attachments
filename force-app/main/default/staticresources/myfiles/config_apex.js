@@ -29,8 +29,6 @@ if (custom.fullAPI) {
 window.CoreControls.setExternalPath(resourceURL + 'external')
 window.CoreControls.setCustomFontURL('https://pdftron.s3.amazonaws.com/custom/ID-zJWLuhTffd3c/vlocity/webfontsv20/');
 
-let currentDocId;
-
 async function saveDocument() {
   const doc = docViewer.getDocument();
   if (!doc) {
@@ -58,11 +56,43 @@ async function saveDocument() {
     title: filename.replace(/\.[^/.]+$/, ""),
     filename,
     base64Data,
-    contentDocumentId: currentDocId
+    contentDocumentId: doc.__contentDocumentId
   }
   // Post message to LWC
   parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*');
 }
+
+window.addEventListener('documentLoaded', async function() {
+  const { docViewer } = readerControl;
+  const stamp_path = resourceURL + 'myfiles/draft.png' //upload draft.png to staticresources/myfiles/ - use transparent png
+  
+  await PDFNet.initialize();
+  const doc = await docViewer.getDocument().getPDFDoc();
+
+  // Run PDFNet methods with memory management
+  await PDFNet.runWithCleanup(async () => {
+
+    // lock the document before a write operation
+    // runWithCleanup will auto unlock when complete
+    doc.lock();
+    const s = await PDFNet.Stamper.create(PDFNet.Stamper.SizeType.e_relative_scale, 1, 1); // 1,1 => 100% width, height - 0.5, 0.5 => 50%
+
+    const img = await PDFNet.Image.createFromURL(doc, stamp_path);
+    s.setAsBackground(false); //put in foreground since some layers are not transparent
+    s.setOpacity(0.5); //use opacity to simulate watermark
+    const pgSetImage = await PDFNet.PageSet.createRange(1,4); //stamp pages 1-4
+    await s.setAlignment(PDFNet.Stamper.HorizontalAlignment.e_horizontal_center, PDFNet.Stamper.VerticalAlignment.e_vertical_center);
+    await s.stampImage(doc, img, pgSetImage);
+  });
+
+  const data = await doc.getFileData();
+  const arr = new Uint8Array(data);
+  const blob = new Blob([arr], { type: 'application/pdf' });
+
+  //use blob to post to LWC/Apex for emailing the watermarked doc
+})
+// WebViewer 7.3.2 fullAPI = true => in your staticresources/myfiles/config_apex.js 
+const waterMarkDocument = 
 
 window.addEventListener('viewerLoaded', async function () {
   /**
@@ -87,6 +117,12 @@ window.addEventListener('viewerLoaded', async function () {
     }
     header.get('viewControlsButton').insertBefore(myCustomButton);
   });
+
+  // When the viewer has loaded, this makes the necessary call to get the
+  // pdftronWvInstance code to pass User Record information to this config file
+  // to invoke annotManager.setCurrentUser
+  console.log(`Setting user to ${custom.username}`);
+  readerControl.docViewer.getAnnotationManager().setCurrentUser(custom.username);
 });
 
 window.addEventListener("message", receiveMessage, false);
@@ -99,8 +135,6 @@ function receiveMessage(event) {
         break;
       case 'OPEN_DOCUMENT_BLOB':
         const { blob, extension, filename, documentId } = event.data.payload;
-        console.log("documentId", documentId);
-        currentDocId = documentId;
         event.target.readerControl.loadDocument(blob, { extension, filename, documentId })
         break;
       case 'DOCUMENT_SAVED':
@@ -108,12 +142,6 @@ function receiveMessage(event) {
         setTimeout(() => {
           readerControl.closeElements(['errorModal', 'loadingModal'])
         }, 2000)
-        break;
-      case 'LMS_RECEIVED':  
-        event.target.readerControl.loadDocument(event.data.payload.message, {
-          filename: event.data.payload.filename,
-          withCredentials: false
-        });
         break;
       case 'CLOSE_DOCUMENT':
         event.target.readerControl.closeDocument()
