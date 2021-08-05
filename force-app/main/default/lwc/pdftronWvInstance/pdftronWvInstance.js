@@ -88,9 +88,11 @@ export default class PdftronWvInstance extends LightningElement {
   }
 
   initUI() {
+
+    console.log('libUrl', libUrl);
     var myObj = {
       libUrl: libUrl,
-      fullAPI: this.fullAPI || false,
+      fullAPI: this.fullAPI,
       namespacePrefix: '',
       username: this.username,
     };
@@ -120,6 +122,13 @@ export default class PdftronWvInstance extends LightningElement {
     const me = this;
     if (event.isTrusted && typeof event.data === 'object') {
       switch (event.data.type) {
+        case 'THUMBNAIL':
+          let blob = event.data.blob;
+          console.log('blob', blob);
+          let url = window.URL.createObjectURL(blob);
+          let img = this.template.querySelector(`[data-id="image"]`);
+          img.src = url;
+          break;
         case 'SAVE_DOCUMENT':
           const cvId = event.data.payload.contentDocumentId;
           saveDocument({ json: JSON.stringify(event.data.payload), recordId: this.recordId ? this.recordId : '', cvId: cvId })

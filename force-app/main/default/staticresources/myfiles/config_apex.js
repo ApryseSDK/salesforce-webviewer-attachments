@@ -60,11 +60,29 @@ async function saveDocument() {
     base64Data,
     contentDocumentId: currentDocId
   }
+
+  console.log('payload', payload);
   // Post message to LWC
   parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*');
 }
 
+window.addEventListener('documentLoaded', () => {
+  const {docViewer} = readerControl;
+  const doc = docViewer.getDocument();
+
+  const pageNum = 1;
+
+  doc.loadThumbnailAsync(pageNum, (thumbnail) => {
+    console.log("thumbnail", thumbnail);
+    thumbnail.toBlob(blob => {
+      parent.postMessage({type: 'THUMBNAIL', blob}, '*');
+    });
+  });
+})
+
 window.addEventListener('viewerLoaded', async function () {
+
+
   /**
    * On keydown of either the button combination Ctrl+S or Cmd+S, invoke the
    * saveDocument function
