@@ -23,7 +23,7 @@ export default class PdftronWvInstance extends LightningElement {
   //initialization options
   fullAPI = true;
   enableRedaction = true;
-  enableFilePicker = true;
+  enableFilePicker = false;
 
   source = 'My file';
   @api recordId;
@@ -35,6 +35,7 @@ export default class PdftronWvInstance extends LightningElement {
 
   connectedCallback() {
     registerListener('blobSelected', this.handleBlobSelected, this);
+    registerListener('extractPage', this.handlePageExtraction, this);
     window.addEventListener('message', this.handleReceiveMessage.bind(this), false);
   }
 
@@ -94,11 +95,11 @@ export default class PdftronWvInstance extends LightningElement {
       namespacePrefix: '',
       username: this.username,
     };
-    var url = myfilesUrl + '/webviewer-demo-annotated.pdf';
+    //var url = myfilesUrl + '/webviewer-demo-annotated.pdf';
 
     const viewerElement = this.template.querySelector('div')
     // eslint-disable-next-line no-unused-vars
-    const viewer = new PDFTron.WebViewer({
+    const viewer = new WebViewer({
       path: libUrl, // path to the PDFTron 'lib' folder on your server
       custom: JSON.stringify(myObj),
       backendType: 'ems',
@@ -137,34 +138,10 @@ export default class PdftronWvInstance extends LightningElement {
       }
     }
   }
-	
-	handleCallout(endpoint, token){
-		fetch(endpoint,
-		{
-			method : "GET",
-			headers : {
-				"Content-Type": "application/pdf",
-				"Authorization": token
-			}
-		}).then(function(response) {
-			return response.json();
-		})
-		.then((myJson) =>{
-			// console.log('%%%%'+JSON.stringify(myJson));
-			let doc_list = [];
-			for(let v of Object.values(myJson.results)){
-				console.log('%%%%'+JSON.stringify(v));
-				// console.log('$$$$'+v.title);
-				doc_list.push();
-			}
-			
-			// console.log('*****'+JSON.stringify(movies_list));
-			
-			this.documents = doc_list;
-			
-		})
-		.catch(e=>console.log(e));
-	}
+
+  handlePageExtraction(payload) {
+    this.iframeWindow.postMessage({type: 'EXTRACT_PAGES', payload} , '*');
+  }
 
   @api
   openDocument() {

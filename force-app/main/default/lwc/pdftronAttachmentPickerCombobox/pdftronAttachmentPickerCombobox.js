@@ -7,6 +7,7 @@ import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 
 export default class PdftronAttachmentPickerCombobox extends LightningElement {
     error;
+    @track isModalOpen = false;
 
     @track value = '';
     @track picklistOptions = [];
@@ -118,17 +119,20 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
     }
 
     handleChange(event) {
+        this.loadFinished = false;
         this.value = event.detail.value;
         getBase64FromCv({recordId: this.value})
             .then((result) => {
                 console.log('result', result);
                 fireEvent(this.pageRef, 'blobSelected', result);
                 this.error = undefined;
+                this.loadFinished = true;
             })
             .catch((error) => {
                 console.error(error)
                 this.showNotification('Error', error.body.message, 'error');
                 this.error = error;
+                this.loadFinished = true;
             });
     }
 
@@ -141,5 +145,20 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
         //saves current file
         const data = new FormData();
         data.append('mydoc.pdf', blob, 'mydoc.pdf');
+    }
+
+    //handle modal
+    openModal() {
+        // to open modal set isModalOpen tarck value as true
+        this.isModalOpen = true;
+    }
+    closeModal() {
+        // to close modal set isModalOpen tarck value as false
+        this.isModalOpen = false;
+    }
+    submitDetails() {
+        // to close modal set isModalOpen tarck value as false
+        //Add your code to call apex method or do some processing
+        this.isModalOpen = false;
     }
 }

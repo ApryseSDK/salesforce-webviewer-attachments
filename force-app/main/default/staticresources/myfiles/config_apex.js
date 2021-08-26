@@ -36,7 +36,7 @@ async function saveDocument() {
   if (!doc) {
     return;
   }
-  readerControl.openElement('loadingModal');
+  instance.openElement('loadingModal');
 
   const fileType = doc.getType();
   const filename = doc.getFilename();
@@ -69,13 +69,13 @@ window.addEventListener('viewerLoaded', async function () {
    * On keydown of either the button combination Ctrl+S or Cmd+S, invoke the
    * saveDocument function
    */
-  readerControl.hotkeys.on('ctrl+s, command+s', e => {
+  instance.hotkeys.on('ctrl+s, command+s', e => {
     e.preventDefault();
     saveDocument();
   });
 
   // Create a button, with a disk icon, to invoke the saveDocument function
-  readerControl.setHeaderItems(function (header) {
+  instance.setHeaderItems(function (header) {
     var myCustomButton = {
       type: 'actionButton',
       dataElement: 'saveDocumentButton',
@@ -91,33 +91,71 @@ window.addEventListener('viewerLoaded', async function () {
 
 window.addEventListener("message", receiveMessage, false);
 
+async function extractPages(pagesToExtract) {
+  //pagesToExtract is an array of page numbers
+  //pagesToExtract = [2, 3];
+  const { documentViewer, annotationManager } = instance.Core;
+
+  const doc = documentViewer.getDocument();
+
+  // only include annotations on the pages to extract
+  const annotList = annotationManager.getAnnotationsList().filter(annot => pagesToExtract.indexOf(annot.PageNumber) > -1);
+  const xfdfString = await annotationManager.exportAnnotations({ annotList });
+  const data = await doc.extractPages(pagesToExtract, xfdfString);
+  const arr = new Uint8Array(data);
+
+  //optionally save the blob to a file or upload to a server
+  return new Blob([arr], { type: 'application/pdf' });
+}
+
+const downloadFile = (blob, fileName) => {
+  const link = document.createElement('a');
+  // create a blobURI pointing to our Blob
+  link.href = URL.createObjectURL(blob);
+  link.download = fileName;
+  // some browser needs the anchor to be in the doc
+  document.body.append(link);
+  link.click();
+  link.remove();
+  // in case the Blob uses a lot of memory
+  setTimeout(() => URL.revokeObjectURL(link.href), 7000);
+};
+
 function receiveMessage(event) {
   if (event.isTrusted && typeof event.data === 'object') {
     switch (event.data.type) {
       case 'OPEN_DOCUMENT':
-        event.target.readerControl.loadDocument(event.data.file)
+        event.target.instance.loadDocument(event.data.file)
         break;
       case 'OPEN_DOCUMENT_BLOB':
         const { blob, extension, filename, documentId } = event.data.payload;
         console.log("documentId", documentId);
         currentDocId = documentId;
-        event.target.readerControl.loadDocument(blob, { extension, filename, documentId })
+        event.target.instance.loadDocument(blob, { extension, filename, documentId })
         break;
       case 'DOCUMENT_SAVED':
         console.log(`${JSON.stringify(event.data)}`);
-        readerControl.showErrorMessage('Document saved ')
+        instance.showErrorMessage('Document saved ')
         setTimeout(() => {
-          readerControl.closeElements(['errorModal', 'loadingModal'])
+          instance.closeElements(['errorModal', 'loadingModal'])
         }, 2000)
         break;
       case 'LMS_RECEIVED':  
-        event.target.readerControl.loadDocument(event.data.payload.message, {
+        event.target.instance.loadDocument(event.data.payload.message, {
           filename: event.data.payload.filename,
           withCredentials: false
         });
         break;
+        case 'EXTRACT_PAGES':
+          console.log('event.data.payload', event.data.payload);
+          /*
+          const { fileName, pageArray } = event.data.payload;
+          let extractedBlob = extractPages(pageArray);
+          downloadFile(extractedBlob, fileName);
+          */
+        break;
       case 'CLOSE_DOCUMENT':
-        event.target.readerControl.closeDocument()
+        event.target.instance.closeDocument()
         break;
       default:
         break;

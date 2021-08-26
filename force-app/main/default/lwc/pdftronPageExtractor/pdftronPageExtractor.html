@@ -1,0 +1,12 @@
+<template>
+    <lightning-card title="Extract Pages">
+        <div class="slds-p-around_medium lgc-bg">
+            <lightning-input type="text" label="Enter file name" value={fileName} onchange={handleNameChange}></lightning-input>
+            <lightning-input required type="text" label="Enter target page(s) or page range (separated by commas)" value={pageRange} onchange={handlePageChange} placeholder="1, 2, 3-5"></lightning-input>
+        </div>
+        
+        <div class="slds-align_absolute-center">
+            <lightning-button variant="brand" label="Download File" onclick={handleDownload}></lightning-button>
+        </div>
+    </lightning-card>
+</template>

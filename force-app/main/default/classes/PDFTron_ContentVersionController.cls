@@ -28,6 +28,19 @@ public with sharing class PDFTron_ContentVersionController {
             List<String> cdIdList = new List<String> ();
             List<ContentVersionWrapper> cvwList = new List<ContentVersionWrapper> ();
 
+            //Email to Case
+            String casePrefix = Schema.getGlobalDescribe().get('Case').getDescribe().getKeyPrefix();
+
+            if(casePrefix == recordId.substring(0,3)) { //Check for Case email attachments
+                //Get ContentDocumentLink
+                for(ContentDocumentLink cdl : 
+                    [   SELECT ContentDocumentId 
+                        FROM ContentDocumentLink 
+                        WHERE LinkedEntityId 
+                        IN (SELECT ID From EmailMessage WHERE ParentId = :recordId)]) {
+                            cdIdList.add(cdl.ContentDocumentId);
+                        }
+            }
             //Define supported file extensions
             Set<String> fileFormats = new Set<String> {
                     'pdf', 
@@ -76,8 +89,14 @@ public with sharing class PDFTron_ContentVersionController {
             PDFTron_ContentVersionPayload pl = new PDFTron_ContentVersionPayload(json);
             ContentVersion annotatedCv = new ContentVersion();
 
+            System.debug('retrieving cv for ' + cvId);
+
             //retrieve original document before annotation
             List<ContentVersion> cvList = [SELECT ContentDocumentId FROM ContentVersion WHERE Id = :cvId];
+
+            for(ContentVersion cv : cvList) {
+                system.debug(cv);
+            }
 
             if(cvList.size() == 1) {
                 //retrieve and delete original document
