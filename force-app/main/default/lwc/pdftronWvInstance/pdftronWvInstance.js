@@ -8,6 +8,8 @@ import mimeTypes from './mimeTypes'
 import { fireEvent, registerListener, unregisterAllListeners } from 'c/pubsub';
 import saveDocument from '@salesforce/apex/PDFTron_ContentVersionController.saveDocument';
 import getUser from '@salesforce/apex/PDFTron_ContentVersionController.getUser';
+import lmsWebviewer from "@salesforce/messageChannel/LMSWebViewer__c";
+import { publish, createMessageContext, releaseMessageContext, subscribe, unsubscribe } from 'lightning/messageService';
 
 function _base64ToArrayBuffer(base64) {
   var binary_string =  window.atob(base64);
@@ -20,8 +22,11 @@ function _base64ToArrayBuffer(base64) {
 }
 
 export default class PdftronWvInstance extends LightningElement {
+  channel;
+  context = createMessageContext();
+
   //initialization options
-  fullAPI = true;
+  fullAPI = false;
   enableRedaction = true;
   enableFilePicker = false;
 
@@ -33,10 +38,33 @@ export default class PdftronWvInstance extends LightningElement {
 
   username;
 
+  handleSubscribe() {
+    const parentPage = this;
+    this.channel = subscribe(this.context, lmsWebviewer, (event) => {
+      if (event != null) {
+        //handle date within LWC
+        const message = event.messageBody;
+        const source = event.source;
+        parentPage.receivedMessage = 'Links to be loaded: ' + message + '\nSent From: ' + source;
+        const payload = {
+          message: event.messageBody,
+          filename: event.filename,
+          source: event.source
+        }
+        //post data to WebViewer iframe
+        parentPage.iframeWindow.postMessage({ type: 'LMS_RECEIVED', payload }, '*');
+      }
+    });
+  }
+  handleUnsubscribe() {
+    unsubscribe(this.channel);
+  }
+
   connectedCallback() {
     registerListener('blobSelected', this.handleBlobSelected, this);
     registerListener('extractPage', this.handlePageExtraction, this);
     window.addEventListener('message', this.handleReceiveMessage.bind(this), false);
+    this.handleSubscribe();
   }
 
   disconnectedCallback() {
@@ -114,7 +142,6 @@ export default class PdftronWvInstance extends LightningElement {
     viewerElement.addEventListener('ready', () => {
       this.iframeWindow = viewerElement.querySelector('iframe').contentWindow;
     })
-
   }
 
   handleReceiveMessage(event) {

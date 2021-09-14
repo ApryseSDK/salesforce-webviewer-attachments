@@ -63,8 +63,9 @@ async function saveDocument() {
   // Post message to LWC
   parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*');
 }
-
 window.addEventListener('viewerLoaded', async function () {
+  instance.UI.enableFeatures([instance.UI.Feature.MultipleViewerMerging]);
+});
   /**
    * On keydown of either the button combination Ctrl+S or Cmd+S, invoke the
    * saveDocument function
