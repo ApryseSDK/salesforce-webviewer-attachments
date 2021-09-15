@@ -29,6 +29,8 @@ if (custom.fullAPI) {
 window.CoreControls.setExternalPath(resourceURL + 'external')
 window.CoreControls.setCustomFontURL('https://pdftron.s3.amazonaws.com/custom/ID-zJWLuhTffd3c/vlocity/webfontsv20/');
 
+let currentDocId;
+
 async function saveDocument() {
   const doc = docViewer.getDocument();
   if (!doc) {
@@ -56,7 +58,7 @@ async function saveDocument() {
     title: filename.replace(/\.[^/.]+$/, ""),
     filename,
     base64Data,
-    contentDocumentId: doc.__contentDocumentId
+    contentDocumentId: currentDocId
   }
   // Post message to LWC
   parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*');
@@ -102,13 +104,22 @@ function receiveMessage(event) {
         break;
       case 'OPEN_DOCUMENT_BLOB':
         const { blob, extension, filename, documentId } = event.data.payload;
+        console.log("documentId", documentId);
+        currentDocId = documentId;
         event.target.readerControl.loadDocument(blob, { extension, filename, documentId })
         break;
       case 'DOCUMENT_SAVED':
-        readerControl.showErrorMessage('Document saved!')
+        console.log(`${JSON.stringify(event.data)}`);
+        readerControl.showErrorMessage('Document saved ')
         setTimeout(() => {
           readerControl.closeElements(['errorModal', 'loadingModal'])
         }, 2000)
+        break;
+      case 'LMS_RECEIVED':  
+        event.target.readerControl.loadDocument(event.data.payload.message, {
+          filename: event.data.payload.filename,
+          withCredentials: false
+        });
         break;
       case 'CLOSE_DOCUMENT':
         event.target.readerControl.closeDocument()
