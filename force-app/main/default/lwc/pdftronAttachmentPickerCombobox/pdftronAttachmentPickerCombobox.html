@@ -7,26 +7,14 @@
                 </div>
             </template>
             <div id="attachmentCombobox" class="slds-col slds-size_2-of-3">
-                <lightning-combobox
-                    class="slds-p-top_large slds-p-right_medium"
-                    name="progress"
-                    value={value}
-                    label="Choose an attachment"
-                    placeholder="Choose an attachment..."
-                    options={picklistOptions}
-                    variant="label-hidden"
-                    onchange={handleChange} ></lightning-combobox>
+                <c-lookup onsearch={handleSearch} onselectionchange={handleSingleSelectionChange}
+                    placeholder="Search Attachments">
+                </c-lookup>
             </div>
             <div id="fileUploader" class="slds-p-around_xxx-large slds-col slds-size_1-of-3">
-                <lightning-file-upload
-                class="slds-p-top_xxx-small"
-                label="Attach document"
-                name="fileUploader"
-                accept={acceptedFormats}
-                record-id={recordId}
-                onuploadfinished={handleUploadFinished}
-                multiple>
-        </lightning-file-upload>
+                <lightning-file-upload class="slds-p-top_xxx-small" name="fileUploader"
+                    accept={acceptedFormats} record-id={recordId} onuploadfinished={handleUploadFinished} multiple>
+                </lightning-file-upload>
             </div>
         </div>
     </lightning-card>
