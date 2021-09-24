@@ -1,13 +1,16 @@
 import { LightningElement, track, wire, api } from 'lwc'
 import { CurrentPageReference } from 'lightning/navigation'
 import { fireEvent, registerListener, unregisterAllListeners } from 'c/pubsub'
+import { ShowToastEvent } from 'lightning/platformShowToastEvent'
 import getAttachments from '@salesforce/apex/PDFTron_ContentVersionController.getExistingAttachments'
 import getBase64FromCv from '@salesforce/apex/PDFTron_ContentVersionController.getBase64FromCv'
-import { ShowToastEvent } from 'lightning/platformShowToastEvent'
 import apexSearch from '@salesforce/apex/PDFTron_ContentVersionController.search'
+import getFileDataFromId from '@salesforce/apex/PDFTron_ContentVersionController.getFileDataFromId'
 
 export default class PdftronAttachmentPickerCombobox extends LightningElement {
   error
+
+  @track isModalOpen = false
 
   @track value = ''
   @track picklistOptions = []
@@ -22,9 +25,8 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
     if (!this.documentsRetrieved) {
       getAttachments({ recordId: this.recordId })
         .then(data => {
-          console.log('data', data)
-          this.attachments = data;
-          this.initLookupDefaultResults();
+          this.attachments = data
+          this.initLookupDefaultResults()
 
           this.error = undefined
           this.loadFinished = true
@@ -39,8 +41,8 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
   }
 
   connectedCallback () {
-    registerListener('refreshOnSave', this.refreshOnSave, this);
-    this.initLookupDefaultResults();
+    registerListener('refreshOnSave', this.refreshOnSave, this)
+    this.initLookupDefaultResults()
   }
 
   disconnectedCallback () {
@@ -60,7 +62,7 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
     // Make sure that the lookup is present and if so, set its default results
     const lookup = this.template.querySelector('c-lookup')
     if (lookup) {
-      lookup.setDefaultResults(this.attachments);
+      lookup.setDefaultResults(this.attachments)
     }
   }
 
@@ -89,10 +91,10 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
   }
 
   handleSingleSelectionChange (event) {
-    console.log(event.detail[0])
     this.checkForErrors()
 
     if (event.detail.length < 1) {
+      this.handleClose()
       return
     }
 
@@ -119,64 +121,41 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
       })
   }
 
-  handleUploadFinished (event) {
-    this.showNotification(
-      'Done!...',
-      `Successfully uploaded your file(s)`,
-      'success'
-    )
+  //check for errors on selection
+  checkForErrors () {
+    this.errors = []
+    const selection = this.template.querySelector('c-lookup').getSelection()
+    // Custom validation rule
+    if (this.isMultiEntry && selection.length > this.maxSelectionSize) {
+      this.errors.push({
+        message: `You may only select up to ${this.maxSelectionSize} items.`
+      })
+    }
+    // Enforcing required field
+    if (selection.length === 0) {
+      this.errors.push({ message: 'Please make a selection.' })
+    }
   }
 
   handleUploadFinished () {
-    this.picklistOptions = []
-    let temp = this.value
-    getAttachments({ recordId: this.recordId })
-      .then(data => {
-        console.log('data', data)
+    this.showNotification(
+      'Success',
+      'Your file has been attached to ' + this.recordId,
+      'success'
+    )
+    this.refreshOnSave()
+}
 
-        data.forEach(attachmentRecord => {
-          console.log(JSON.stringify(attachmentRecord))
-          var name =
-            attachmentRecord.cv.Title + '.' + attachmentRecord.cv.FileExtension
-          const option = {
-            label: name,
-            value: attachmentRecord.cv.Id
-          }
-          console.log('option', option)
-          this.picklistOptions = [...this.picklistOptions, option]
-        })
-        this.value = temp
-        this.error = undefined
-        this.loadFinished = true
-      })
-      .catch(error => {
-        console.error(error)
-        this.showNotification('Error', error, 'error')
-        this.error = error
-      })
-  }
-
-  refreshOnSave (docId) {
-    this.picklistOptions = []
+  refreshOnSave () {
     this.loadFinished = false
     getAttachments({ recordId: this.recordId })
       .then(data => {
-        console.log('data', data)
+        this.attachments = data
+        this.initLookupDefaultResults()
 
-        data.forEach(attachmentRecord => {
-          console.log(JSON.stringify(attachmentRecord))
-          var name =
-            attachmentRecord.cv.Title + '.' + attachmentRecord.cv.FileExtension
-          const option = {
-            label: name,
-            value: attachmentRecord.cv.Id
-          }
-          console.log('option', option)
-          this.picklistOptions = [...this.picklistOptions, option]
-        })
-        this.value = docId
         this.error = undefined
         this.loadFinished = true
+        this.documentsRetrieved = true
       })
       .catch(error => {
         console.error(error)
@@ -185,29 +164,19 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
       })
   }
 
-  handleChange (event) {
-    this.value = event.detail.value
-    getBase64FromCv({ recordId: this.value })
-      .then(result => {
-        console.log('result', result)
-        fireEvent(this.pageRef, 'blobSelected', result)
-        this.error = undefined
-      })
-      .catch(error => {
-        console.error(error)
-        this.showNotification('Error', error.body.message, 'error')
-        this.error = error
-      })
+  handleDownload () {
+    fireEvent(this.pageRef, 'downloadDocument', '*')
   }
 
-  submitDetails () {
-    this.isSaving = true
-    this.saveData()
+  handleClose () {
+    fireEvent(this.pageRef, 'closeDocument', '*')
   }
 
-  saveData () {
-    //saves current file
-    const data = new FormData()
-    data.append('mydoc.pdf', blob, 'mydoc.pdf')
+  openModal () {
+    this.isModalOpen = true
+  }
+
+  closeModal () {
+    this.isModalOpen = false
   }
 }

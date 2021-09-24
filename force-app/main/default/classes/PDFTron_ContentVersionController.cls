@@ -1,5 +1,4 @@
 public with sharing class PDFTron_ContentVersionController {
-
     static Set<String> supportedFileFormats = new Set<String> {
         'pdf', 
         'xfdf',
@@ -112,7 +111,22 @@ public with sharing class PDFTron_ContentVersionController {
         }
     }
 
-    @AuraEnabled(Cacheable=true)
+    //get single file from Id
+    @AuraEnabled(Cacheable=true) 
+    public static ContentVersionWrapper getFileDataFromId(String Id) {
+        try {
+            Long max = 1024 * 1024 * 25; // kb - mb - 6 MB
+            ContentVersion cv = [SELECT Title, FileExtension, ContentSize, VersionData, ContentDocumentId, LastModifiedDate FROM ContentVersion WHERE Id = :Id];
+            if(cv.ContentSize > max) {
+                throw new PDFTronException('Your file size must not exceed ' + convertBytesToFormattedString(max) + ' - current file size: ' + convertBytesToFormattedString(cv.ContentSize));
+            }
+            return new ContentVersionWrapper(cv, true);
+        } catch(Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    @AuraEnabled
     public static List<LookupSearchResult> getExistingAttachments(String recordId){
         try {
             
@@ -245,4 +259,6 @@ public with sharing class PDFTron_ContentVersionController {
             this.contentDocumentId = pl.contentDocumentId;
         }
     }
+
+    public class PDFTronException extends Exception {}
 }

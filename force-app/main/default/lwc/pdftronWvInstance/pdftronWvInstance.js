@@ -25,6 +25,8 @@ export default class PdftronWvInstance extends LightningElement {
   enableRedaction = true;
   enableFilePicker = true;
 
+  uiInitialized = false;
+
   source = 'My file';
   @api recordId;
 
@@ -35,6 +37,8 @@ export default class PdftronWvInstance extends LightningElement {
 
   connectedCallback() {
     registerListener('blobSelected', this.handleBlobSelected, this);
+    registerListener('closeDocument', this.closeDocument, this);
+    registerListener('downloadDocument', this.downloadDocument, this);
     window.addEventListener('message', this.handleReceiveMessage.bind(this), false);
   }
 
@@ -44,11 +48,11 @@ export default class PdftronWvInstance extends LightningElement {
   }
 
   handleBlobSelected(record) {
-    //record = JSON.parse(record);
-
-    var blobby = new Blob([_base64ToArrayBuffer(record.body)], {
+    let blobby = new Blob([_base64ToArrayBuffer(record.body)], {
       type: mimeTypes[record.FileExtension]
     });
+
+    console.log("blobby", blobby);
 
     const payload = {
       blob: blobby,
@@ -56,17 +60,16 @@ export default class PdftronWvInstance extends LightningElement {
       filename: record.cv.Title + "." + record.cv.FileExtension,
       documentId: record.cv.Id
     };
-    this.iframeWindow.postMessage({type: 'OPEN_DOCUMENT_BLOB', payload} , '*');
+
+    console.log("payload", payload);
+    this.iframeWindow.postMessage({ type: 'OPEN_DOCUMENT_BLOB', payload }, '*');
   }
 
   renderedCallback() {
     var self = this;
-    if (this.uiInitialized || !this.userRecord) {
-        return;
-    }
 
-    if(this.userRecord) {
-      this.uiInitialized = true;
+    if (this.uiInitialized) { 
+        return;
     }
 
     Promise.all([
@@ -101,7 +104,7 @@ export default class PdftronWvInstance extends LightningElement {
 
     const viewerElement = this.template.querySelector('div')
     // eslint-disable-next-line no-unused-vars
-    const viewer = new PDFTron.WebViewer({
+    const viewer = new WebViewer({
       path: libUrl, // path to the PDFTron 'lib' folder on your server
       custom: JSON.stringify(myObj),
       backendType: 'ems',
@@ -131,8 +134,11 @@ export default class PdftronWvInstance extends LightningElement {
             fireEvent(this.pageRef, 'refreshOnSave', response);
           })
           .catch(error => {
+            me.iframeWindow.postMessage({ type: 'DOCUMENT_SAVED', response }, '*')
+            fireEvent(this.pageRef, 'refreshOnSave', response);
             console.error(event.data.payload.contentDocumentId);
             console.error(JSON.stringify(error));
+            this.showNotification('Error', error.body, 'error')
           });
           break;
         default:
@@ -140,37 +146,9 @@ export default class PdftronWvInstance extends LightningElement {
       }
     }
   }
-	
-	handleCallout(endpoint, token){
-		fetch(endpoint,
-		{
-			method : "GET",
-			headers : {
-				"Content-Type": "application/pdf",
-				"Authorization": token
-			}
-		}).then(function(response) {
-			return response.json();
-		})
-		.then((myJson) =>{
-			// console.log('%%%%'+JSON.stringify(myJson));
-			let doc_list = [];
-			for(let v of Object.values(myJson.results)){
-				console.log('%%%%'+JSON.stringify(v));
-				// console.log('$$$$'+v.title);
-				doc_list.push();
-			}
-			
-			// console.log('*****'+JSON.stringify(movies_list));
-			
-			this.documents = doc_list;
-			
-		})
-		.catch(e=>console.log(e));
-	}
 
-  @api
-  openDocument() {
+  downloadDocument() {
+    this.iframeWindow.postMessage({type: 'DOWNLOAD_DOCUMENT' }, '*')
   }
 
   @api
