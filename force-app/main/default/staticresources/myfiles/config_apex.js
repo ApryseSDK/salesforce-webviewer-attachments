@@ -32,15 +32,15 @@ window.CoreControls.setCustomFontURL('https://pdftron.s3.amazonaws.com/custom/ID
 let currentDocId;
 
 async function saveDocument() {
-  const doc = docViewer.getDocument();
+  const doc = instance.Core.documentViewer.getDocument();
   if (!doc) {
     return;
   }
-  readerControl.openElement('loadingModal');
+  instance.openElement('loadingModal');
 
   const fileType = doc.getType();
   const filename = doc.getFilename();
-  const xfdfString = await docViewer.getAnnotationManager().exportAnnotations();
+  const xfdfString = await instance.Core.documentViewer.getAnnotationManager().exportAnnotations();
   const data = await doc.getFileData({
     // Saves the document with annotations in it
     xfdfString
@@ -64,18 +64,43 @@ async function saveDocument() {
   parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*');
 }
 
+const downloadWebViewerFile = async () => {
+  const doc = instance.Core.documentViewer.getDocument();
+
+  if (!doc) {
+    return;
+  }
+
+  const data = await doc.getFileData();
+  const arr = new Uint8Array(data);
+  const blob = new Blob([arr], { type: 'application/pdf' });
+
+  const filename = doc.getFilename();
+
+  downloadFile(blob, filename)
+}
+
+const downloadFile = (blob, fileName) => {
+  const link = document.createElement('a');
+  // create a blobURI pointing to our Blob
+  link.href = URL.createObjectURL(blob);
+  link.download = fileName;
+  // some browser needs the anchor to be in the doc
+  document.body.append(link);
+  link.click();
+  link.remove();
+  // in case the Blob uses a lot of memory
+  setTimeout(() => URL.revokeObjectURL(link.href), 7000);
+};
+
 window.addEventListener('viewerLoaded', async function () {
-  /**
-   * On keydown of either the button combination Ctrl+S or Cmd+S, invoke the
-   * saveDocument function
-   */
-  readerControl.hotkeys.on('ctrl+s, command+s', e => {
+  instance.hotkeys.on('ctrl+s, command+s', e => {
     e.preventDefault();
     saveDocument();
   });
 
   // Create a button, with a disk icon, to invoke the saveDocument function
-  readerControl.setHeaderItems(function (header) {
+  instance.setHeaderItems(function (header) {
     var myCustomButton = {
       type: 'actionButton',
       dataElement: 'saveDocumentButton',
@@ -91,7 +116,7 @@ window.addEventListener('viewerLoaded', async function () {
   // When the viewer has loaded, this makes the necessary call to get the
   // pdftronWvInstance code to pass User Record information to this config file
   // to invoke annotManager.setCurrentUser
-  readerControl.docViewer.getAnnotationManager().setCurrentUser(custom.username);
+  instance.Core.documentViewer.getAnnotationManager().setCurrentUser(custom.username);
 });
 
 window.addEventListener("message", receiveMessage, false);
@@ -100,29 +125,32 @@ function receiveMessage(event) {
   if (event.isTrusted && typeof event.data === 'object') {
     switch (event.data.type) {
       case 'OPEN_DOCUMENT':
-        event.target.readerControl.loadDocument(event.data.file)
+        instance.loadDocument(event.data.file)
         break;
       case 'OPEN_DOCUMENT_BLOB':
         const { blob, extension, filename, documentId } = event.data.payload;
         console.log("documentId", documentId);
         currentDocId = documentId;
-        event.target.readerControl.loadDocument(blob, { extension, filename, documentId })
+        instance.loadDocument(blob, { extension, filename, documentId })
         break;
       case 'DOCUMENT_SAVED':
         console.log(`${JSON.stringify(event.data)}`);
-        readerControl.showErrorMessage('Document saved ')
+        instance.showErrorMessage('Document saved ')
         setTimeout(() => {
-          readerControl.closeElements(['errorModal', 'loadingModal'])
+          instance.closeElements(['errorModal', 'loadingModal'])
         }, 2000)
         break;
       case 'LMS_RECEIVED':  
-        event.target.readerControl.loadDocument(event.data.payload.message, {
+        instance.loadDocument(event.data.payload.message, {
           filename: event.data.payload.filename,
           withCredentials: false
         });
         break;
+      case 'DOWNLOAD_DOCUMENT':
+        downloadWebViewerFile();
+        break;
       case 'CLOSE_DOCUMENT':
-        event.target.readerControl.closeDocument()
+        instance.closeDocument()
         break;
       default:
         break;

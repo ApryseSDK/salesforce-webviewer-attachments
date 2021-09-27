@@ -1,4 +1,23 @@
 public with sharing class PDFTron_ContentVersionController {
+    static Set<String> supportedFileFormats = new Set<String> {
+        'pdf', 
+        'xfdf',
+        'fdf',
+        'doc',
+        'docx', 
+        'xlsx',
+        'ppt',
+        'pptx',
+        'jpg',
+        'jpeg',
+        'png',
+        'mov',
+        'tif',
+        'tiff',
+        'xls',
+        'xlsx'
+    };
+
     @AuraEnabled
     public static string getUser() {
         try {
@@ -17,53 +36,6 @@ public with sharing class PDFTron_ContentVersionController {
         try {
             ContentVersion cv = [SELECT Id, Title,FileExtension, VersionData FROM ContentVersion WHERE Id = :recordId AND IsLatest = true LIMIT 1];
             return new ContentVersionWrapper(cv, true);
-        } catch (Exception e) {
-            throw new AuraHandledException(e.getMessage());
-        }
-    }
-
-    @AuraEnabled
-    public static List<ContentVersionWrapper> getAttachments(String recordId){
-        try {
-            List<String> cdIdList = new List<String> ();
-            List<ContentVersionWrapper> cvwList = new List<ContentVersionWrapper> ();
-
-            //Define supported file extensions
-            Set<String> fileFormats = new Set<String> {
-                    'pdf', 
-                    'xfdf',
-                    'fdf',
-                    'doc',
-                    'docx', 
-                    'xlsx',
-                    'ppt',
-                    'pptx',
-                    'jpg',
-                    'jpeg',
-                    'png',
-                    'mov',
-                    'tif',
-                    'xls',
-                    'xlsx'
-            };
-            //Find links between record & document
-            for(ContentDocumentLink cdl : 
-                    [   SELECT id, ContentDocumentId, ContentDocument.LatestPublishedVersionId 
-                        FROM ContentDocumentLink 
-                        WHERE LinkedEntityId = :recordId    ]) {
-                cdIdList.add(cdl.ContentDocumentId);
-            }
-            //Use links to get attachments
-            for(ContentVersion cv : 
-                    [   SELECT Id, Title,FileExtension, VersionData, ContentDocumentId 
-                        FROM ContentVersion 
-                        WHERE ContentDocumentId IN :cdIdList 
-                        AND IsLatest = true ]) {
-                if(fileFormats.contains(cv.FileExtension.toLowerCase())) {
-                    cvwList.add(new ContentVersionWrapper(cv, false));
-                }
-            }
-            return cvwList;
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());
         }
@@ -109,6 +81,152 @@ public with sharing class PDFTron_ContentVersionController {
             throw new AuraHandledException(e.getMessage());
         }
     }
+    
+    @AuraEnabled
+    public static List<ContentVersionWrapper> getAttachments(String recordId){
+        try {
+            List<String> cdIdList = new List<String> ();
+            List<ContentVersionWrapper> cvwList = new List<ContentVersionWrapper> ();
+
+            //Find links between record & document
+            for(ContentDocumentLink cdl : 
+                    [   SELECT id, ContentDocumentId, ContentDocument.LatestPublishedVersionId 
+                        FROM ContentDocumentLink 
+                        WHERE LinkedEntityId = :recordId    ]) {
+                cdIdList.add(cdl.ContentDocumentId);
+            }
+            //Use links to get attachments
+            for(ContentVersion cv : 
+                    [   SELECT Id, Title,FileExtension, VersionData, ContentDocumentId 
+                        FROM ContentVersion 
+                        WHERE ContentDocumentId IN :cdIdList 
+                        AND IsLatest = true ]) {
+                if(checkFileExtension(cv.FileExtension)) {
+                    cvwList.add(new ContentVersionWrapper(cv, false));
+                }
+            }
+            return cvwList;
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    //get single file from Id
+    @AuraEnabled(Cacheable=true) 
+    public static ContentVersionWrapper getFileDataFromId(String Id) {
+        try {
+            Long max = 1024 * 1024 * 25; // kb - mb - 6 MB
+            ContentVersion cv = [SELECT Title, FileExtension, ContentSize, VersionData, ContentDocumentId, LastModifiedDate FROM ContentVersion WHERE Id = :Id];
+            if(cv.ContentSize > max) {
+                throw new PDFTronException('Your file size must not exceed ' + convertBytesToFormattedString(max) + ' - current file size: ' + convertBytesToFormattedString(cv.ContentSize));
+            }
+            return new ContentVersionWrapper(cv, true);
+        } catch(Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
+    @AuraEnabled
+    public static List<LookupSearchResult> getExistingAttachments(String recordId){
+        try {
+            
+            List<String> cdIdList = new List<String> ();
+            List<LookupSearchResult> results = new List<LookupSearchResult>();
+
+            //Find links between record & document for attachments
+            for(ContentDocumentLink cdl : 
+                    [   SELECT id, ContentDocumentId, ContentDocument.LatestPublishedVersionId 
+                        FROM ContentDocumentLink 
+                        WHERE LinkedEntityId = :recordId    ]) {
+                cdIdList.add(cdl.ContentDocumentId);
+            }
+            //Use links to get attachments
+            for(ContentVersion cv : 
+                    [   SELECT Id, Title,FileExtension, VersionData, ContentDocumentId, LastModifiedDate, LastModifiedBy.Alias, ContentSize
+                        FROM ContentVersion 
+                        WHERE ContentDocumentId IN :cdIdList 
+                        AND IsLatest = true 
+                        ORDER BY LastModifiedDate DESC
+                        LIMIT 10    ]) 
+            {            
+                if(checkFileExtension(cv.FileExtension)) {
+                    String subtitle = 'Modified ' + cv.LastModifiedDate + ' by ' + cv.LastModifiedBy.Alias;
+                    results.add(new LookupSearchResult(cv.Id, 'ContentVersion', getFileLogo(cv.FileExtension), cv.Title + '.' + cv.FileExtension + ' (' + convertBytesToFormattedString(cv.ContentSize) + ')', subtitle));
+                }
+            }
+            return results;
+            
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+    
+    @AuraEnabled(Cacheable=true)
+    public static List<LookupSearchResult> search(String searchTerm, List<String> selectedIds) {
+        searchTerm = '%' + searchTerm + '%'; 
+
+        // Prepare results
+        List<LookupSearchResult> results = new List<LookupSearchResult>();
+
+        for (ContentVersion cv : [
+            SELECT Title, FileExtension, LastModifiedDate, ContentSize, LastModifiedBy.Alias
+            FROM ContentVersion
+            WHERE Title LIKE :searchTerm
+            ORDER BY LastModifiedDate DESC
+        ]) {
+            System.debug(cv);
+            if(checkFileExtension(cv.FileExtension)) {
+                String subtitle = 'Modified ' + cv.LastModifiedDate + ' by ' + cv.LastModifiedBy.Alias;
+                results.add(new LookupSearchResult(cv.Id, 'ContentVersion', getFileLogo(cv.FileExtension), cv.Title + '.' + cv.FileExtension + ' (' + convertBytesToFormattedString(cv.ContentSize) + ')', subtitle));
+            }
+        }
+
+        //results.sort();
+        return results;
+    }
+
+    public static String getFileLogo(String extension) {
+        String logo = 'doctype:unknown';
+
+        if(extension == 'pdf') {
+            logo = 'doctype:pdf';
+        } else if(extension == 'docx' || extension == 'doc') {
+            logo = 'doctype:word';
+        } else if(extension == 'xlsx' || extension == 'xls') {
+            logo = 'doctype:excel';
+        } else if(extension == 'tif' || extension == 'jpg' || extension == 'jpeg' || extension == 'png') {
+            logo = 'doctype:image';
+        }             
+        return logo;
+    }
+
+    //only process blobs from below file formats
+    public static Boolean checkFileExtension(String extension) {
+        return supportedFileFormats.contains(extension.toLowerCase()); //compare set of valid extensions with lower case input string
+    }
+
+    //take long value and output readable string
+    public static String convertBytesToFormattedString(Long Value) {
+        if (Value < 1024) {
+            //no conversion needed
+            return string.valueOf(Value) + ' Bytes';
+        } else if (Value >= 1024 && Value < (1024*1024)) {
+            //KB
+            Decimal kb = Decimal.valueOf(Value);
+            kb = kb.divide(1024,2);
+            return string.valueOf(kb) + ' KB';
+        } else if (Value >= (1024*1024) && Value < (1024*1024*1024)) {
+            //MB
+            Decimal mb = Decimal.valueOf(Value);
+            mb = mb.divide((1024*1024),2);
+            return string.valueOf(mb) + ' MB';
+        } else {
+            //GB
+            Decimal gb = Decimal.valueOf(Value);
+            gb = gb.divide((1024*1024*1024),2);
+            return string.valueOf(gb) + ' GB';
+        }    
+    }
 
     public class ContentVersionWrapper {
         @AuraEnabled
@@ -141,4 +259,6 @@ public with sharing class PDFTron_ContentVersionController {
             this.contentDocumentId = pl.contentDocumentId;
         }
     }
+
+    public class PDFTronException extends Exception {}
 }
