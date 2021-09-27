@@ -52,7 +52,6 @@ export default class PdftronWvInstance extends LightningElement {
       type: mimeTypes[record.FileExtension]
     });
 
-    console.log("blobby", blobby);
 
     const payload = {
       blob: blobby,
