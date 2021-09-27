@@ -70,7 +70,6 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
     const lookupElement = event.target
     apexSearch(event.detail)
       .then(results => {
-        console.log('searchResults', results)
         lookupElement.setSearchResults(results)
       })
       .catch(error => {
