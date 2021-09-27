@@ -371,8 +371,8 @@ export default class Lookup extends NavigationMixin(LightningElement) {
 
     get getSearchIconClass() {
         let css = 'slds-input__icon slds-input__icon_right ';
-        if (!this.isMultiEntry) {
-            css += this.hasSelection() ? 'slds-hide' : '';
+        if (!this.isMultiEntry && this.hasSelection()) {
+            css += 'slds-hide';
         }
         return css;
     }
