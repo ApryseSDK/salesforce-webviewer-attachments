@@ -61,7 +61,6 @@ export default class PdftronWvInstance extends LightningElement {
       documentId: record.cv.Id
     };
 
-    console.log("payload", payload);
     this.iframeWindow.postMessage({ type: 'OPEN_DOCUMENT_BLOB', payload }, '*');
   }
 
