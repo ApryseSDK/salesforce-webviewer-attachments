@@ -363,8 +363,10 @@ export default class Lookup extends NavigationMixin(LightningElement) {
         let css = 'slds-combobox__form-element slds-input-has-icon ';
         if (this.isMultiEntry) {
             css += 'slds-input-has-icon_right';
+        } else if (this.hasSelection()) {
+            css += 'slds-input-has-icon_left-right'
         } else {
-            css += this.hasSelection() ? 'slds-input-has-icon_left-right' : 'slds-input-has-icon_right';
+            css += 'slds-input-has-icon_right';
         }
         return css;
     }
