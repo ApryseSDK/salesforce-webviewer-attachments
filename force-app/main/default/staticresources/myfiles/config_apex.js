@@ -1,33 +1,32 @@
 var resourceURL = '/resource/'
-window.CoreControls.forceBackendType('ems');
+window.Core.forceBackendType('ems');
 
 var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
 resourceURL = resourceURL + custom.namespacePrefix;
 
 /**
- * The following `window.CoreControls.set*` functions point WebViewer to the
+ * The following `window.Core.set*` functions point WebViewer to the
  * optimized source code specific for the Salesforce platform, to ensure the
  * uploaded files stay under the 5mb limit
  */
 // office workers
-window.CoreControls.setOfficeWorkerPath(resourceURL + 'office')
-window.CoreControls.setOfficeAsmPath(resourceURL + 'office_asm');
-window.CoreControls.setOfficeResourcePath(resourceURL + 'office_resource');
+window.Core.setOfficeWorkerPath(resourceURL + 'office')
+window.Core.setOfficeAsmPath(resourceURL + 'office_asm');
+window.Core.setOfficeResourcePath(resourceURL + 'office_resource');
 
 // pdf workers
-window.CoreControls.setPDFResourcePath(resourceURL + 'resource')
+window.Core.setPDFResourcePath(resourceURL + 'resource')
 if (custom.fullAPI) {
-  window.CoreControls.setPDFWorkerPath(resourceURL + 'pdf_full')
-  window.CoreControls.setPDFAsmPath(resourceURL + 'asm_full');
+  window.Core.setPDFWorkerPath(resourceURL + 'pdf_full')
+  window.Core.setPDFAsmPath(resourceURL + 'asm_full');
 } else {
-  window.CoreControls.setPDFWorkerPath(resourceURL + 'pdf_lean')
-  window.CoreControls.setPDFAsmPath(resourceURL + 'asm_lean');
+  window.Core.setPDFWorkerPath(resourceURL + 'pdf_lean')
+  window.Core.setPDFAsmPath(resourceURL + 'asm_lean');
 }
 
 // external 3rd party libraries
-window.CoreControls.setExternalPath(resourceURL + 'external')
-window.CoreControls.setCustomFontURL('https://pdftron.s3.amazonaws.com/custom/ID-zJWLuhTffd3c/vlocity/webfontsv20/');
+window.Core.setExternalPath(resourceURL + 'external')
 
 let currentDocId;
 
@@ -129,12 +128,10 @@ function receiveMessage(event) {
         break;
       case 'OPEN_DOCUMENT_BLOB':
         const { blob, extension, filename, documentId } = event.data.payload;
-        console.log("documentId", documentId);
         currentDocId = documentId;
         instance.loadDocument(blob, { extension, filename, documentId })
         break;
       case 'DOCUMENT_SAVED':
-        console.log(`${JSON.stringify(event.data)}`);
         instance.showErrorMessage('Document saved ')
         setTimeout(() => {
           instance.closeElements(['errorModal', 'loadingModal'])

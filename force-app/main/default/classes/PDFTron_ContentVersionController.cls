@@ -81,7 +81,21 @@ public with sharing class PDFTron_ContentVersionController {
             throw new AuraHandledException(e.getMessage());
         }
     }
-    
+
+    @AuraEnabled
+    public static List<Map<String,String>> getAnnotations(String documentId) {
+        List<PDFTronAnnotations__c> temp = [SELECT Id, Content_Version_Id__c, Annotation_Id__c, xfdfString__c FROM PDFTronAnnotations__c WHERE Content_Version_Id__c = :documentId];
+        List<Map<String,String>> annotations = new List<Map<String,String>>();
+        for (Integer i = 0; i < temp.size(); i++) {
+            Map<String,String> annot = new Map<String, String>();
+            annot.put('xfdfString', temp[i].xfdfString__c);
+            annot.put('Annotation_Id', temp[i].Annotation_Id__c);
+            annot.put('ContentVersion_Id', temp[i].Content_Version_Id__c);
+            annotations.add(annot);
+        }
+        return annotations;
+    }
+
     @AuraEnabled
     public static List<ContentVersionWrapper> getAttachments(String recordId){
         try {
