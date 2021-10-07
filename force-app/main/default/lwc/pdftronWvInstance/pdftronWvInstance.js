@@ -132,7 +132,7 @@ export default class PdftronWvInstance extends LightningElement {
             fireEvent(this.pageRef, 'refreshOnSave', response);
           })
           .catch(error => {
-            me.iframeWindow.postMessage({ type: 'DOCUMENT_SAVED', response }, '*')
+            me.iframeWindow.postMessage({ type: 'DOCUMENT_SAVED', error }, '*')
             fireEvent(this.pageRef, 'refreshOnSave', response);
             console.error(event.data.payload.contentDocumentId);
             console.error(JSON.stringify(error));
