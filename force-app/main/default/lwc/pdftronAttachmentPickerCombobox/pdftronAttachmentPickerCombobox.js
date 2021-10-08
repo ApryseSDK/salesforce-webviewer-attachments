@@ -27,7 +27,6 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
         .then(data => {
           this.attachments = data
           this.initLookupDefaultResults()
-
           this.error = undefined
           this.loadFinished = true
           this.documentsRetrieved = true
@@ -42,6 +41,7 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
 
   connectedCallback () {
     registerListener('refreshOnSave', this.refreshOnSave, this)
+    registerListener('viewerLoaded', this.handleInitialDocument, this)
     this.initLookupDefaultResults()
   }
 
@@ -63,6 +63,13 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
     const lookup = this.template.querySelector('c-lookup')
     if (lookup) {
       lookup.setDefaultResults(this.attachments)
+    }
+  }
+
+  handleInitialDocument() {
+    //if attachments are present, load the first one
+    if(this.attachments.length > 0) {
+      this.handleFileLoad(this.attachments[0].id)
     }
   }
 
@@ -98,26 +105,30 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
     }
 
     this.isLoading = true
+    this.handleFileLoad(event.detail[0])
+  }
 
-    getFileDataFromId({ Id: event.detail[0] })
-      .then(result => {
-        fireEvent(this.pageRef, 'blobSelected', result)
-        this.isLoading = false
-      })
-      .catch(error => {
-        // TODO: handle error
-        this.error = error
-        console.error(error)
-        this.isLoading = false
-        let def_message =
-          'We have encountered an error while handling your file. '
+  handleFileLoad(recordId) {
+    getFileDataFromId({ Id: recordId })
+    .then(result => {
+      fireEvent(this.pageRef, 'blobSelected', result)
+      this.isLoading = false
+    })
+    .catch(error => {
+      this.isLoading = false
+      // TODO: handle error
+      this.error = error
+      console.error(error)
+      this.isLoading = false
+      let def_message =
+        'We have encountered an error while handling your file. '
 
-        this.showNotification(
-          'Error',
-          def_message + error.body.message,
-          'error'
-        )
-      })
+      this.showNotification(
+        'Error',
+        def_message + error.body.message,
+        'error'
+      )
+    })
   }
 
   //check for errors on selection

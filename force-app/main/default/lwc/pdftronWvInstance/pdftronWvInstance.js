@@ -139,6 +139,9 @@ export default class PdftronWvInstance extends LightningElement {
             this.showNotification('Error', error.body, 'error')
           });
           break;
+        case 'VIEWER_LOADED':
+          fireEvent(this.pageRef, 'viewerLoaded', '*');
+          break;
         default:
           break;
       }

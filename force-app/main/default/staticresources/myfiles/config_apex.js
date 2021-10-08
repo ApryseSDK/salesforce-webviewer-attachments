@@ -93,6 +93,8 @@ const downloadFile = (blob, fileName) => {
 };
 
 window.addEventListener('viewerLoaded', async function () {
+  parent.postMessage({ type: 'VIEWER_LOADED' }, '*');
+  
   instance.hotkeys.on('ctrl+s, command+s', e => {
     e.preventDefault();
     saveDocument();
