@@ -8,6 +8,8 @@ import mimeTypes from './mimeTypes'
 import { fireEvent, registerListener, unregisterAllListeners } from 'c/pubsub';
 import saveDocument from '@salesforce/apex/PDFTron_ContentVersionController.saveDocument';
 import getUser from '@salesforce/apex/PDFTron_ContentVersionController.getUser';
+import getAnnotations from '@salesforce/apex/PDFTron_ContentVersionController.getAnnotations';
+import saveAnnotations from '@salesforce/apex/PDFTron_ContentVersionController.saveAnnotations';
 
 function _base64ToArrayBuffer(base64) {
   var binary_string =  window.atob(base64);
@@ -34,6 +36,9 @@ export default class PdftronWvInstance extends LightningElement {
   pageRef;
 
   username;
+  currentDocId = '';
+  fetchAnnots = false;
+  lastRefresh = '';
 
   connectedCallback() {
     registerListener('blobSelected', this.handleBlobSelected, this);
@@ -41,10 +46,21 @@ export default class PdftronWvInstance extends LightningElement {
     registerListener('downloadDocument', this.downloadDocument, this);
     window.addEventListener('message', this.handleReceiveMessage.bind(this), false);
   }
-
+  
   disconnectedCallback() {
     unregisterAllListeners(this);
     window.removeEventListener('message', this.handleReceiveMessage, true);
+  }
+
+  handleRefreshAnnotations(seconds) {
+    var interval = setInterval(function () {
+      if(this.currentDocId && this.fetchAnnots) {
+        getAnnotations(this.currentDocId).then(result => {
+          this.iframeWindow.postMessage({type: 'LOAD_ANNOTATIONS_FINISHED', result }, window.location.origin)
+        }).catch(this.showErrorMessage)
+      }
+    }.bind(this), seconds * 1000)
+    
   }
 
   handleBlobSelected(record) {
@@ -75,6 +91,10 @@ export default class PdftronWvInstance extends LightningElement {
     ])
     .then(() => this.handleInitWithCurrentUser())
     .catch(console.error);
+  }
+
+  showErrorMessage(error) {
+    console.error(error);
   }
 
   handleInitWithCurrentUser() {
@@ -132,15 +152,34 @@ export default class PdftronWvInstance extends LightningElement {
             fireEvent(this.pageRef, 'refreshOnSave', response);
           })
           .catch(error => {
-            me.iframeWindow.postMessage({ type: 'DOCUMENT_SAVED', response }, '*')
-            fireEvent(this.pageRef, 'refreshOnSave', response);
+            me.iframeWindow.postMessage({ type: 'DOCUMENT_SAVED', error }, '*')
+            fireEvent(this.pageRef, 'refreshOnSave', error);
             console.error(event.data.payload.contentDocumentId);
             console.error(JSON.stringify(error));
             this.showNotification('Error', error.body, 'error')
           });
+        case 'DOCUMENT_LOADED':
+          this.currentDocId = event.data.currentDocId;
+          this.fetchAnnots = true;
+          //this.handleRefreshAnnotations(3);
           break;
         case 'VIEWER_LOADED':
           fireEvent(this.pageRef, 'viewerLoaded', '*');
+          break;
+        case 'LOAD_ANNOTATIONS':
+          getAnnotations(event.data.payload).then(result => {
+            fireEvent(this.pageRef, 'lastRefresh', '*');
+            me.iframeWindow.postMessage({type: 'LOAD_ANNOTATIONS_FINISHED', result }, window.location.origin)
+          }).catch(this.showErrorMessage)
+          break;
+        case 'SAVE_ANNOTATIONS':
+          saveAnnotations(event.data.payload).then(response => {
+            console.log('Saving annotations', response);
+          })
+          .catch(error => {
+            console.error(error)
+            this.showErrorMessage(error)
+          });
           break;
         default:
           break;
@@ -154,6 +193,8 @@ export default class PdftronWvInstance extends LightningElement {
 
   @api
   closeDocument() {
+    this.fetchAnnots = false
+    this.currentDocId = ''
     this.iframeWindow.postMessage({type: 'CLOSE_DOCUMENT' }, '*')
   }
 }

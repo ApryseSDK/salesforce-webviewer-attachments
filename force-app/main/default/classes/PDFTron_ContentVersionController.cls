@@ -84,16 +84,21 @@ public with sharing class PDFTron_ContentVersionController {
 
     @AuraEnabled
     public static List<Map<String,String>> getAnnotations(String documentId) {
-        List<PDFTronAnnotations__c> temp = [SELECT Id, Content_Version_Id__c, Annotation_Id__c, xfdfString__c FROM PDFTronAnnotations__c WHERE Content_Version_Id__c = :documentId];
-        List<Map<String,String>> annotations = new List<Map<String,String>>();
-        for (Integer i = 0; i < temp.size(); i++) {
-            Map<String,String> annot = new Map<String, String>();
-            annot.put('xfdfString', temp[i].xfdfString__c);
-            annot.put('Annotation_Id', temp[i].Annotation_Id__c);
-            annot.put('ContentVersion_Id', temp[i].Content_Version_Id__c);
-            annotations.add(annot);
+        try{
+            List<PDFTronAnnotations__c> temp = 
+                [SELECT Id, Content_Version_Id__c, Annotation_Id__c, xfdfString__c FROM PDFTronAnnotations__c WHERE Content_Version_Id__c = :documentId];
+            List<Map<String,String>> annotations = new List<Map<String,String>>();
+            for (Integer i = 0; i < temp.size(); i++) {
+                Map<String,String> annot = new Map<String, String>();
+                annot.put('xfdfString', temp[i].xfdfString__c);
+                annot.put('Annotation_Id', temp[i].Annotation_Id__c);
+                annot.put('ContentVersion_Id', temp[i].Content_Version_Id__c);
+                annotations.add(annot);
+            }
+            return annotations;                             
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
         }
-        return annotations;
     }
 
     @AuraEnabled
@@ -111,7 +116,7 @@ public with sharing class PDFTron_ContentVersionController {
             }
             //Use links to get attachments
             for(ContentVersion cv : 
-                    [   SELECT Id, Title,FileExtension, VersionData, ContentDocumentId 
+                    [   SELECT Id, Title,FileExtension, VersionData, ContentDocumentId, PDFTron_Annotations__r.xfdfString__c  
                         FROM ContentVersion 
                         WHERE ContentDocumentId IN :cdIdList 
                         AND IsLatest = true ]) {
@@ -123,6 +128,67 @@ public with sharing class PDFTron_ContentVersionController {
         } catch (Exception e) {
             throw new AuraHandledException(e.getMessage());
         }
+    }
+
+    @AuraEnabled
+    public static String saveAnnotations(String action, String documentId, String annotationId, String xfdfString) {
+        System.debug('annotationId: ' + annotationId);
+        System.debug('documentId: ' + documentId);
+        System.debug('action: ' + action);
+        System.debug('xfdf: ' + xfdfString);
+
+        try {
+            PDFTronAnnotations__c[] annots = [SELECT Id, Content_Version_Id__c, Annotation_Id__c, xfdfString__c FROM PDFTronAnnotations__c WHERE Annotation_Id__c = :annotationId];
+
+            System.debug('annots: '  + annots);
+            Pattern MyPattern = Pattern.compile('<delete>(.*)</delete>');
+            Matcher MyMatcher = MyPattern.matcher(xfdfString);
+
+            Schema.DescribeSObjectResult scDescription = PDFTronAnnotations__c.sObjectType.getDescribe();
+
+            if (action == 'delete') {
+                if (!scDescription.isDeletable()){
+                throw new PDFTronException('Insufficient delete access');
+                }
+
+                String result = '';
+                for(PDFTronAnnotations__c annot : annots) {
+                    result += annot.Id + ', ';
+                }
+
+                result = result.left(result.length()-2)+result.right(1);
+
+                // Delete record
+                delete annots;
+                return 'Successfully deleted: ' + result;
+            } else if (annots.size() == 0) {
+
+                if (!scDescription.isCreateable()){
+                throw new PDFTronException('Insufficient insert access');
+                }
+
+                // Create new record
+                PDFTronAnnotations__c newAnnot = new PDFTronAnnotations__c(
+                    Content_Version_Id__c=documentId,
+                    Annotation_Id__c=annotationId,
+                    xfdfString__c=xfdfString
+                );
+                insert newAnnot;
+                return newAnnot.Id + '';
+            } else {
+            if (!scDescription.isUpdateable()){
+                throw new PDFTronException('Insufficient update access');
+                }
+
+                // Update record
+                annots[0].xfdfString__c = xfdfString;
+                update annots;
+                return annots[0].Id + '';
+            }
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+
     }
 
     //get single file from Id

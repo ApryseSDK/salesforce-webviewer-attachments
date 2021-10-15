@@ -30,6 +30,25 @@ window.Core.setExternalPath(resourceURL + 'external')
 
 let currentDocId;
 
+function loadxfdfStrings(documentId) {
+  parent.postMessage({type: 'LOAD_ANNOTATIONS', payload: { documentId, latestRefresh: Date.now() } }, '*');
+}
+
+function savexfdfString(payload) {
+  parent.postMessage({type: 'SAVE_ANNOTATIONS', payload }, '*');
+}
+
+function drawAnnotations(data) {
+  const annotationManager = instance.Core.documentViewer.getAnnotationManager();
+  const currentAnnots = annotationManager.getAnnotationsList();
+  
+  //annotationManager.deleteAnnotations(currentAnnots);
+  data.forEach(async (col) => {
+    const annotations = await annotationManager.importAnnotCommand(col.xfdfString);
+    annotationManager.drawAnnotationsFromList(annotations);
+  });
+}
+
 async function saveDocument() {
   const doc = instance.Core.documentViewer.getDocument();
   if (!doc) {
@@ -120,6 +139,36 @@ window.addEventListener('viewerLoaded', async function () {
   instance.Core.documentViewer.getAnnotationManager().setCurrentUser(custom.username);
 });
 
+window.addEventListener('documentLoaded', () => {
+  currentDocId = instance.Core.documentViewer.getDocument().__contentDocumentId;
+  //initial load
+  loadxfdfStrings(currentDocId);
+  
+  setInterval(function() {
+     console.log('Polling ' + currentDocId); 
+     loadxfdfStrings(currentDocId);
+    }, 5000);
+  
+  const annotationManager = instance.Core.documentViewer.getAnnotationManager();
+
+  annotationManager.addEventListener('annotationChanged', (annotations, action, { imported }) => {
+    if(imported) {
+      //skip imported annotations
+      return;
+    }
+    annotationManager.exportAnnotCommand().then(function(xfdfString) {
+      annotations.forEach(function(annot) {
+        savexfdfString({
+          action,
+          documentId: currentDocId,
+          annotationId: annot.Id,
+          xfdfString
+        });
+      });
+    });
+  });
+});
+
 window.addEventListener("message", receiveMessage, false);
 
 function receiveMessage(event) {
@@ -132,12 +181,23 @@ function receiveMessage(event) {
         const { blob, extension, filename, documentId } = event.data.payload;
         currentDocId = documentId;
         instance.loadDocument(blob, { extension, filename, documentId })
+
+        instance.Core.documentViewer.addEventListener('documentLoaded', function(e) {
+          // Save contentDocuemntId to use later during saving
+          instance.Core.documentViewer.getDocument().__contentDocumentId = currentDocId;
+        });
         break;
       case 'DOCUMENT_SAVED':
         instance.showErrorMessage('Document saved ')
         setTimeout(() => {
           instance.closeElements(['errorModal', 'loadingModal'])
         }, 2000)
+        break;
+      case 'LOAD_ANNOTATIONS_FINISHED':
+        drawAnnotations(event.data.result);
+        break;
+      case 'CLEAN_UP':
+        instance.Core.documentViewer.getAnnotationManager().off('annotationChanged', annotationChanged);
         break;
       case 'LMS_RECEIVED':  
         instance.loadDocument(event.data.payload.message, {

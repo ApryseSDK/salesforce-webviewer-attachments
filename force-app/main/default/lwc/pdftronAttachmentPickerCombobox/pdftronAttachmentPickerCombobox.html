@@ -9,6 +9,7 @@
             <c-lookup onsearch={handleSearch} onselectionchange={handleSingleSelectionChange}
                 placeholder="Open File in WebViewer...">
             </c-lookup>
+            <div class="slds-p-left_xxx-small slds-text-body_small">{lastRefreshString}<lightning-formatted-date-time value={lastRefresh} hour="2-digit" minute="2-digit" second="2-digit" hour12="true"></lightning-formatted-date-time></div>
         </div>
         <div id="fileUploader" class="slds-col slds-size_1-of-12 slds-p-left_xx-small">
             <!-- lightning button for open modal window -->

@@ -13,6 +13,8 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
   @track isModalOpen = false
 
   @track value = ''
+  @track lastRefresh;
+  @track lastRefreshString = '';
   @track picklistOptions = []
   @track isSaving = false
   @track loadFinished = false
@@ -42,6 +44,7 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
   connectedCallback () {
     registerListener('refreshOnSave', this.refreshOnSave, this)
     registerListener('viewerLoaded', this.handleInitialDocument, this)
+    registerListener('lastRefresh', this.handleLastRefresh, this)
     this.initLookupDefaultResults()
   }
 
@@ -66,10 +69,17 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
     }
   }
 
+  handleLastRefresh(event) {
+    //slds-text-color_success
+    this.lastRefreshString = 'Last updated '
+    this.lastRefresh = Date.now()
+  }
+
   handleInitialDocument() {
     //if attachments are present, load the first one
     if(this.attachments.length > 0) {
       this.handleFileLoad(this.attachments[0].id)
+      this.template.querySelector('c-lookup').selection = this.attachments[0]
     }
   }
 
@@ -109,6 +119,8 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
   }
 
   handleFileLoad(recordId) {
+    this.isLoading = true
+    this.lastRefreshString = 'Loading annotations...'
     getFileDataFromId({ Id: recordId })
     .then(result => {
       fireEvent(this.pageRef, 'blobSelected', result)
@@ -179,6 +191,8 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
   }
 
   handleClose () {
+    this.lastRefresh = null
+    this.lastRefreshString = ''
     fireEvent(this.pageRef, 'closeDocument', '*')
   }
 
