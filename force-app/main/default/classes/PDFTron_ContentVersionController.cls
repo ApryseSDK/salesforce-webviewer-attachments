@@ -57,26 +57,6 @@ public with sharing class PDFTron_ContentVersionController {
       );
       ContentVersion annotatedCv = new ContentVersion();
 
-      //retrieve original document before annotation
-      List<ContentVersion> cvList = [
-        SELECT ContentDocumentId
-        FROM ContentVersion
-        WHERE Id = :cvId
-      ];
-
-      if (cvList.size() == 1) {
-        //retrieve and delete original document
-        List<ContentDocument> originalDocument = [
-          SELECT Id
-          FROM ContentDocument
-          WHERE Id = :cvList[0].ContentDocumentId
-        ];
-
-        if (originalDocument.size() > 0)
-          delete originalDocument;
-      } else {
-        System.debug('Could not retrieve record for ' + cvId);
-      }
       //build document blob
       annotatedCv.VersionData = EncodingUtil.base64Decode(pl.base64Data);
       annotatedCv.Title = pl.title;

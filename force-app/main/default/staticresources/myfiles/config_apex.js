@@ -28,10 +28,10 @@ if (custom.fullAPI) {
 // external 3rd party libraries
 window.Core.setExternalPath(resourceURL + 'external')
 
-let currentDocId;
+let currentDocId = '';
 
-function loadxfdfStrings(documentId) {
-  parent.postMessage({type: 'LOAD_ANNOTATIONS', payload: { documentId, latestRefresh: Date.now() } }, '*');
+function loadxfdfStrings() {
+  parent.postMessage({type: 'LOAD_ANNOTATIONS' }, '*');
 }
 
 function savexfdfString(payload) {
@@ -112,26 +112,8 @@ const downloadFile = (blob, fileName) => {
 };
 
 window.addEventListener('viewerLoaded', async function () {
+  currentDocId = ''
   parent.postMessage({ type: 'VIEWER_LOADED' }, '*');
-  
-  instance.hotkeys.on('ctrl+s, command+s', e => {
-    e.preventDefault();
-    saveDocument();
-  });
-
-  // Create a button, with a disk icon, to invoke the saveDocument function
-  instance.setHeaderItems(function (header) {
-    var myCustomButton = {
-      type: 'actionButton',
-      dataElement: 'saveDocumentButton',
-      title: 'tool.SaveDocument',
-      img: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>',
-      onClick: function () {
-        saveDocument();
-      }
-    }
-    header.get('viewControlsButton').insertBefore(myCustomButton);
-  });
 
   // When the viewer has loaded, this makes the necessary call to get the
   // pdftronWvInstance code to pass User Record information to this config file
@@ -139,16 +121,7 @@ window.addEventListener('viewerLoaded', async function () {
   instance.Core.documentViewer.getAnnotationManager().setCurrentUser(custom.username);
 });
 
-window.addEventListener('documentLoaded', () => {
-  currentDocId = instance.Core.documentViewer.getDocument().__contentDocumentId;
-  //initial load
-  loadxfdfStrings(currentDocId);
-  
-  setInterval(function() {
-     console.log('Polling ' + currentDocId); 
-     loadxfdfStrings(currentDocId);
-    }, 5000);
-  
+window.addEventListener('documentLoaded', () => {  
   const annotationManager = instance.Core.documentViewer.getAnnotationManager();
 
   annotationManager.addEventListener('annotationChanged', (annotations, action, { imported }) => {
@@ -181,11 +154,19 @@ function receiveMessage(event) {
         const { blob, extension, filename, documentId } = event.data.payload;
         currentDocId = documentId;
         instance.loadDocument(blob, { extension, filename, documentId })
-
         instance.Core.documentViewer.addEventListener('documentLoaded', function(e) {
           // Save contentDocuemntId to use later during saving
-          instance.Core.documentViewer.getDocument().__contentDocumentId = currentDocId;
+          instance.Core.documentViewer.getDocument().__contentDocumentId = documentId;
+
+          //initial load
+          if(currentDocId !== '') {
+            loadxfdfStrings();
+            setInterval(loadxfdfStrings(), 5000);
+          }
         });
+        break;
+      case 'FLATTEN_DOC':
+        saveDocument();
         break;
       case 'DOCUMENT_SAVED':
         instance.showErrorMessage('Document saved ')
@@ -209,6 +190,7 @@ function receiveMessage(event) {
         downloadWebViewerFile();
         break;
       case 'CLOSE_DOCUMENT':
+        currentDocId = ''
         instance.closeDocument()
         break;
       default:
