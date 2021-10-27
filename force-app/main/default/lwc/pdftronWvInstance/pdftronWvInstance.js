@@ -6,7 +6,7 @@ import myfilesUrl from "@salesforce/resourceUrl/myfiles";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import mimeTypes from "./mimeTypes";
 import { fireEvent, registerListener, unregisterAllListeners } from "c/pubsub";
-import saveDocument from "@salesforce/apex/PDFTron_ContentVersionController.saveDocument";
+import saveDocument from "@salesforce/apex/PDFTron_ContentVersionController.flattenDocument";
 import getUser from "@salesforce/apex/PDFTron_ContentVersionController.getUser";
 import getAnnotations from "@salesforce/apex/PDFTron_ContentVersionController.getAnnotations";
 import saveAnnotations from "@salesforce/apex/PDFTron_ContentVersionController.saveAnnotations";
@@ -23,11 +23,17 @@ function _base64ToArrayBuffer(base64) {
 
 export default class PdftronWvInstance extends LightningElement {
   //initialization options
+  @track documentLoaded = false;
+  @track viewerLoaded = false;
+
+  @track isFinal = false;
+
   fullAPI = true;
   enableRedaction = true;
   enableFilePicker = true;
+  iframeWindow;
 
-  uiInitialized = false;
+  @track uiInitialized = false;
 
   source = "My file";
   @api recordId;
@@ -44,6 +50,7 @@ export default class PdftronWvInstance extends LightningElement {
     registerListener("blobSelected", this.handleBlobSelected, this);
     registerListener("closeDocument", this.closeDocument, this);
     registerListener("downloadDocument", this.downloadDocument, this);
+    registerListener("flattenfile", this.flattenCompletedDocument, this);
     window.addEventListener(
       "message",
       this.handleReceiveMessage.bind(this),
@@ -103,6 +110,15 @@ export default class PdftronWvInstance extends LightningElement {
       });
   }
 
+  showNotification(title, message, variant) {
+    const evt = new ShowToastEvent({
+      title: title,
+      message: message,
+      variant: variant
+    });
+    this.dispatchEvent(evt);
+  }
+
   initUI() {
     var myObj = {
       libUrl: libUrl,
@@ -133,7 +149,6 @@ export default class PdftronWvInstance extends LightningElement {
     });
   }
 
-  @api
   flattenCompletedDocument() {
     this.iframeWindow.postMessage({ type: "FLATTEN_DOC" }, "*");
   }
@@ -143,31 +158,45 @@ export default class PdftronWvInstance extends LightningElement {
     if (event.isTrusted && typeof event.data === "object") {
       switch (event.data.type) {
         case "SAVE_DOCUMENT":
+          if (this.isFinal) {
+            break;
+          }
+
           const cvId = event.data.payload.contentDocumentId;
-          saveDocument({
-            json: JSON.stringify(event.data.payload),
-            recordId: this.recordId ? this.recordId : "",
-            cvId: cvId ? cvId : ""
-          })
-            .then((response) => {
-              me.iframeWindow.postMessage(
-                { type: "DOCUMENT_SAVED", response },
-                "*"
-              );
-              fireEvent(this.pageRef, "refreshOnSave", response);
+
+          if (!this.isFinal) {
+            this.isFinal = true;
+            saveDocument({
+              json: JSON.stringify(event.data.payload),
+              recordId: this.recordId ? this.recordId : "",
+              cvId: cvId
             })
-            .catch((error) => {
-              me.iframeWindow.postMessage(
-                { type: "DOCUMENT_SAVED", error },
-                "*"
-              );
-              fireEvent(this.pageRef, "refreshOnSave", error);
-              console.error(event.data.payload.contentDocumentId);
-              console.error(JSON.stringify(error));
-              this.showNotification("Error", error.body, "error");
-            });
+              .then((response) => {
+                me.iframeWindow.postMessage(
+                  { type: "DOCUMENT_SAVED", response },
+                  "*"
+                );
+                fireEvent(this.pageRef, "refreshOnSave", response);
+              })
+              .catch((error) => {
+                me.iframeWindow.postMessage(
+                  { type: "DOCUMENT_SAVED", error },
+                  "*"
+                );
+                fireEvent(this.pageRef, "refreshOnSave", error);
+                console.error(event.data.payload.contentDocumentId);
+                console.error(JSON.stringify(error));
+                this.showNotification("Error", error.body, "error");
+              });
+          }
+          break;
         case "VIEWER_LOADED":
           fireEvent(this.pageRef, "viewerLoaded", "*");
+          this.viewerLoaded = true;
+          break;
+        case "DOCUMENT_LOADED":
+          fireEvent(this.pageRef, "documentLoaded", "*");
+          this.documentLoaded = true;
           break;
         case "LOAD_ANNOTATIONS":
           getAnnotations({ documentId: this.currentDocId })

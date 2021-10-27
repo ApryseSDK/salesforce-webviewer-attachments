@@ -49,6 +49,60 @@ public with sharing class PDFTron_ContentVersionController {
   }
 
   @AuraEnabled
+  public static string flattenDocument(
+    String json,
+    String recordId,
+    String cvId
+  ) {
+    try {
+      PDFTron_ContentVersionPayload pl = new PDFTron_ContentVersionPayload(
+        json
+      );
+
+      ContentVersion annotatedCv = new ContentVersion();
+
+      //build document blob
+      annotatedCv.VersionData = EncodingUtil.base64Decode(pl.base64Data);
+      annotatedCv.Title = pl.title + '_Final';
+      annotatedCv.PathOnClient = pl.filename;
+
+      List<ContentVersion> contentVersions = [
+        SELECT Id, ContentDocumentId
+        FROM ContentVersion
+        WHERE Title = :annotatedCv.Title
+      ];
+
+      if (contentVersions.size() == 0) {
+        insert annotatedCv;
+      }
+
+      if (
+        annotatedCv.ContentDocumentId == null && String.isNotBlank(recordId)
+      ) {
+        //get the content version since ContentDocumentId is defined after insert
+        List<ContentVersion> contentVersion = [
+          SELECT Id, ContentDocumentId
+          FROM ContentVersion
+          WHERE Id = :annotatedCv.Id
+          LIMIT 1
+        ];
+
+        //link record with document
+        ContentDocumentLink contentDocumentLink = new ContentDocumentLink(
+          LinkedEntityId = recordId,
+          ContentDocumentId = contentVersion[0].ContentDocumentId,
+          ShareType = 'V'
+        );
+        insert contentDocumentLink;
+      }
+
+      return annotatedCv.Id;
+    } catch (Exception e) {
+      throw new AuraHandledException(e.getMessage());
+    }
+  }
+
+  @AuraEnabled
   public static String saveDocument(String json, String recordId, String cvId) {
     try {
       //parse annotated document payload and create new ContentVersion
@@ -90,15 +144,18 @@ public with sharing class PDFTron_ContentVersionController {
       throw new AuraHandledException(e.getMessage());
     }
   }
-
   @AuraEnabled
   public static List<Map<String, String>> getAnnotations(String documentId) {
     try {
+      System.debug('looking for document annotations for ' + documentId);
       List<PDFTronAnnotations__c> temp = [
         SELECT Id, Content_Version_Id__c, Annotation_Id__c, xfdfString__c
         FROM PDFTronAnnotations__c
         WHERE Content_Version_Id__c = :documentId
       ];
+
+      System.debug('found annotations list: ' + temp);
+
       List<Map<String, String>> annotations = new List<Map<String, String>>();
       for (Integer i = 0; i < temp.size(); i++) {
         Map<String, String> annot = new Map<String, String>();
@@ -150,19 +207,12 @@ public with sharing class PDFTron_ContentVersionController {
     String annotationId,
     String xfdfString
   ) {
-    System.debug('annotationId: ' + annotationId);
-    System.debug('documentId: ' + documentId);
-    System.debug('action: ' + action);
-    System.debug('xfdf: ' + xfdfString);
-
     try {
       PDFTronAnnotations__c[] annots = [
         SELECT Id, Content_Version_Id__c, Annotation_Id__c, xfdfString__c
         FROM PDFTronAnnotations__c
         WHERE Annotation_Id__c = :annotationId
       ];
-
-      System.debug('annots: ' + annots);
       Pattern MyPattern = Pattern.compile('<delete>(.*)</delete>');
       Matcher MyMatcher = MyPattern.matcher(xfdfString);
 
@@ -322,7 +372,6 @@ public with sharing class PDFTron_ContentVersionController {
       WHERE Title LIKE :searchTerm
       ORDER BY LastModifiedDate DESC
     ]) {
-      System.debug(cv);
       if (checkFileExtension(cv.FileExtension)) {
         String subtitle =
           'Modified ' +

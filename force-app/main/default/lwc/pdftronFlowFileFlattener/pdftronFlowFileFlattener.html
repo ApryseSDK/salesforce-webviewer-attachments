@@ -1,0 +1,19 @@
+<template>
+  <template if:true={isLoading}>
+    <div class="spinnerContainer">
+      <lightning-spinner
+        alternative-text="Loading"
+        size="small"
+      ></lightning-spinner>
+    </div>
+  </template>
+  <lightning-card>
+    <div class="slds-p-around_medium slds-align_absolute-center">
+      <lightning-button
+        label="Flatten File and Attach to Record"
+        variant="brand"
+        onclick={handleFlatten}
+      ></lightning-button>
+    </div>
+  </lightning-card>
+</template>

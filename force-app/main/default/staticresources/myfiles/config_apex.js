@@ -40,13 +40,29 @@ function savexfdfString(payload) {
 
 function drawAnnotations(data) {
   const annotationManager = instance.Core.documentViewer.getAnnotationManager();
-  const currentAnnots = annotationManager.getAnnotationsList();
-  
-  //annotationManager.deleteAnnotations(currentAnnots);
+  let currentAnnots = annotationManager.getAnnotationsList();
+/*
   data.forEach(async (col) => {
     const annotations = await annotationManager.importAnnotCommand(col.xfdfString);
+    annotations.forEach(annotation => {
+      annotationManager.redrawAnnotation(annotation);
+    });
+  });
+*/
+  
+  data.forEach(async (col) => {
+    const annotations = await annotationManager.importAnnotCommand(col.xfdfString);
+    currentAnnots = currentAnnots.filter( function( el ) {
+      return !annotations.includes( el );
+    } );
     annotationManager.drawAnnotationsFromList(annotations);
   });
+
+  currentAnnots.forEach(annot => {
+    //console.log('current annot', annot);
+  })
+  
+  //annotationManager.deleteAnnotations(currentAnnots, {source: 'annotRefresh'});
 }
 
 async function saveDocument() {
@@ -56,6 +72,9 @@ async function saveDocument() {
   }
   instance.openElement('loadingModal');
 
+  const fileSize = await doc.getFileSize();
+  let fileSizeMb = fileSize / (1024 * 1024);
+  //alert(`filesize in bytes: ${fileSizeMb}`);
   const fileType = doc.getType();
   const filename = doc.getFilename();
   const xfdfString = await instance.Core.documentViewer.getAnnotationManager().exportAnnotations();
@@ -79,7 +98,16 @@ async function saveDocument() {
     contentDocumentId: currentDocId
   }
   // Post message to LWC
-  parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*');
+  if(fileSizeMb < 3.0) {
+    //save files under 3MB back to record
+    parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*');
+  } else {
+    //download larger files
+    downloadWebViewerFile();
+
+    //deactivate spinner
+    instance.closeElements(['errorModal', 'loadingModal'])
+  }
 }
 
 const downloadWebViewerFile = async () => {
@@ -88,14 +116,18 @@ const downloadWebViewerFile = async () => {
   if (!doc) {
     return;
   }
-
-  const data = await doc.getFileData();
+  const xfdfString = await instance.Core.documentViewer.getAnnotationManager().exportAnnotations({useDisplayAuthor: true});
+  const data = await doc.getFileData({
+    // Saves the document with annotations in it
+    xfdfString
+  });
   const arr = new Uint8Array(data);
   const blob = new Blob([arr], { type: 'application/pdf' });
 
-  const filename = doc.getFilename();
+  const filename = doc.getFilename()
+  const downloadname = filename.replace(/\.[^/.]+$/, "") + '_Final.' + doc.getType();
 
-  downloadFile(blob, filename)
+  downloadFile(blob, downloadname)
 }
 
 const downloadFile = (blob, fileName) => {
@@ -122,10 +154,12 @@ window.addEventListener('viewerLoaded', async function () {
 });
 
 window.addEventListener('documentLoaded', () => {  
+  
+  parent.postMessage({ type: 'DOCUMENT_LOADED' }, '*');
   const annotationManager = instance.Core.documentViewer.getAnnotationManager();
 
-  annotationManager.addEventListener('annotationChanged', (annotations, action, { imported }) => {
-    if(imported) {
+  annotationManager.addEventListener('annotationChanged', (annotations, action, {imported, source}) => {
+    if(imported || source === 'annotRefresh') {
       //skip imported annotations
       return;
     }
@@ -161,7 +195,10 @@ function receiveMessage(event) {
           //initial load
           if(currentDocId !== '') {
             loadxfdfStrings();
-            setInterval(loadxfdfStrings(), 5000);
+            
+            setInterval(() => {
+              loadxfdfStrings()
+            }, 5000);
           }
         });
         break;
