@@ -32,12 +32,14 @@ window.CoreControls.setCustomFontURL('https://pdftron.s3.amazonaws.com/custom/ID
 let currentDocId;
 
 async function saveDocument() {
+  // SF document file size limit
+  const docLimit = 5 * Math.pow(1024, 2);
   const doc = instance.Core.documentViewer.getDocument();
   if (!doc) {
     return;
   }
   instance.openElement('loadingModal');
-
+  const fileSize = await doc.getFileSize();
   const fileType = doc.getType();
   const filename = doc.getFilename();
   const xfdfString = await instance.Core.documentViewer.getAnnotationManager().exportAnnotations();
@@ -61,7 +63,7 @@ async function saveDocument() {
     contentDocumentId: currentDocId
   }
   // Post message to LWC
-  parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*');
+  (fileSize < docLimit) ? parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*') : downloadWebViewerFile();
 }
 
 const downloadWebViewerFile = async () => {
