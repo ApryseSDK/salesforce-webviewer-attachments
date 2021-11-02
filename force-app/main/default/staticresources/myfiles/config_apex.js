@@ -63,7 +63,7 @@ async function saveDocument() {
     contentDocumentId: currentDocId
   }
   // Post message to LWC
-  (fileSize < docLimit) ? parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*') : downloadWebViewerFile();
+  fileSize < docLimit ? parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*') : downloadWebViewerFile();
 }
 
 const downloadWebViewerFile = async () => {
