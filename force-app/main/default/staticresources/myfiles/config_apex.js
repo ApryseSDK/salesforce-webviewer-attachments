@@ -29,7 +29,7 @@ if (custom.fullAPI) {
 window.CoreControls.setExternalPath(resourceURL + 'external')
 window.CoreControls.setCustomFontURL('https://pdftron.s3.amazonaws.com/custom/ID-zJWLuhTffd3c/vlocity/webfontsv20/');
 
-let currentDocId;
+var currentDocId;
 
 async function saveDocument() {
   const doc = instance.Core.documentViewer.getDocument();
@@ -117,6 +117,8 @@ window.addEventListener('viewerLoaded', async function () {
   // pdftronWvInstance code to pass User Record information to this config file
   // to invoke annotManager.setCurrentUser
   instance.Core.documentViewer.getAnnotationManager().setCurrentUser(custom.username);
+
+  const annotationManager = await instance.Core.documentViewer.getAnnotationManager();
 });
 
 window.addEventListener("message", receiveMessage, false);
