@@ -39,16 +39,12 @@ export default class PdftronWvInstance extends LightningElement {
     registerListener("blobSelected", this.handleBlobSelected, this);
     registerListener("closeDocument", this.closeDocument, this);
     registerListener("downloadDocument", this.downloadDocument, this);
-    window.addEventListener(
-      "message",
-      this.handleReceiveMessage.bind(this),
-      false
-    );
+    window.addEventListener("message", this.handleReceiveMessage);
   }
 
   disconnectedCallback() {
     unregisterAllListeners(this);
-    window.removeEventListener("message", this.handleReceiveMessage, true);
+    window.removeEventListener("message", this.handleReceiveMessage);
   }
 
   handleBlobSelected(record) {
@@ -123,7 +119,7 @@ export default class PdftronWvInstance extends LightningElement {
     });
   }
 
-  handleReceiveMessage(event) {
+  handleReceiveMessage = (event) => {
     const me = this;
     if (event.isTrusted && typeof event.data === "object") {
       switch (event.data.type) {
