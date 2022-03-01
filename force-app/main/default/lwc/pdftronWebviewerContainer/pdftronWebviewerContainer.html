@@ -1,12 +1,18 @@
 <template>
-    <lightning-card>
-        <div id="cardContainer" class="slds-p-around_x-small">
-            <div id="comboboxContainer">
-                <c-pdftron-attachment-picker-combobox record-id={recordId}></c-pdftron-attachment-picker-combobox>
-            </div>
-            <div id="wvContainer">
-                <c-pdftron-wv-instance record-id={recordId}></c-pdftron-wv-instance>
-            </div>
-        </div>
-    </lightning-card>
+  <lightning-card>
+    <div
+      id="cardContainer"
+      class="slds-var-p-left_xx-small slds-var-p-right_xx-small"
+    >
+      <div id="comboboxContainer">
+        <c-pdftron-attachment-picker-combobox
+          record-id={recordId}
+          is-scan={isScan}
+        ></c-pdftron-attachment-picker-combobox>
+      </div>
+      <div id="wvContainer">
+        <c-pdftron-wv-instance record-id={recordId}></c-pdftron-wv-instance>
+      </div>
+    </div>
+  </lightning-card>
 </template>

@@ -39,16 +39,28 @@ export default class PdftronWvInstance extends LightningElement {
     registerListener("blobSelected", this.handleBlobSelected, this);
     registerListener("closeDocument", this.closeDocument, this);
     registerListener("downloadDocument", this.downloadDocument, this);
-    window.addEventListener(
-      "message",
-      this.handleReceiveMessage.bind(this),
-      false
-    );
+    registerListener("saveFile", this.handleSave, this);
+    registerListener("drawRedact", this.handleDraw, this);
+    registerListener("applyRedactions", this.handleApply, this);
+
+    window.addEventListener("message", this.handleReceiveMessage);
   }
 
   disconnectedCallback() {
     unregisterAllListeners(this);
-    window.removeEventListener("message", this.handleReceiveMessage, true);
+    window.removeEventListener("message", this.handleReceiveMessage);
+  }
+
+  handleApply() {
+    this.iframeWindow.postMessage({ type: "APPLY_REDACTIONS" }, "*");
+  }
+
+  handleDraw() {
+    this.iframeWindow.postMessage({ type: "DRAW_REDACTIONS" }, "*");
+  }
+
+  handleSave() {
+    this.iframeWindow.postMessage({ type: "SAVE_FILE" }, "*");
   }
 
   handleBlobSelected(record) {
@@ -123,10 +135,13 @@ export default class PdftronWvInstance extends LightningElement {
     });
   }
 
-  handleReceiveMessage(event) {
+  handleReceiveMessage = (event) => {
     const me = this;
     if (event.isTrusted && typeof event.data === "object") {
       switch (event.data.type) {
+        case "VIEWER_LOADED":
+          fireEvent(this.pageRef, "viewerLoaded", "*");
+          break;
         case "SAVE_DOCUMENT":
           let cvId = event.data.payload.contentDocumentId;
           saveDocument({
@@ -156,7 +171,7 @@ export default class PdftronWvInstance extends LightningElement {
           break;
       }
     }
-  }
+  };
 
   downloadDocument() {
     this.iframeWindow.postMessage({ type: "DOWNLOAD_DOCUMENT" }, "*");

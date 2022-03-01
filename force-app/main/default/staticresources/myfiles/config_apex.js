@@ -56,8 +56,10 @@ async function saveDocument() {
 
   const base64Data = window.btoa(binary);
 
+  let timestamp = '_Redacted_' + Date.now()
+
   const payload = {
-    title: filename.replace(/\.[^/.]+$/, ""),
+    title: filename.replace(/\.[^/.]+$/, "") + timestamp,
     filename,
     base64Data,
     contentDocumentId: currentDocId
@@ -96,32 +98,22 @@ const downloadFile = (blob, fileName) => {
 };
 
 window.addEventListener('viewerLoaded', async function () {
-  instance.hotkeys.on('ctrl+s, command+s', e => {
-    e.preventDefault();
-    saveDocument();
-  });
-
-  // Create a button, with a disk icon, to invoke the saveDocument function
-  instance.setHeaderItems(function (header) {
-    var myCustomButton = {
-      type: 'actionButton',
-      dataElement: 'saveDocumentButton',
-      title: 'tool.SaveDocument',
-      img: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>',
-      onClick: function () {
-        saveDocument();
-      }
-    }
-    header.get('viewControlsButton').insertBefore(myCustomButton);
-  });
+  parent.postMessage({ type: 'VIEWER_LOADED' }, '*')
+    
+  instance.UI.setToolbarGroup("toolbarGroup-Edit");
+  instance.UI.setToolMode(Tools.ToolNames.REDACTION);
 
   // When the viewer has loaded, this makes the necessary call to get the
   // pdftronWvInstance code to pass User Record information to this config file
   // to invoke annotManager.setCurrentUser
   instance.Core.documentViewer.getAnnotationManager().setCurrentUser(custom.username);
-
-  const annotationManager = await instance.Core.documentViewer.getAnnotationManager();
 });
+
+window.addEventListener('documentLoaded', () => {
+  instance.UI.setZoomLevel('100%');
+  
+  instance.UI.setToolMode(Tools.ToolNames.REDACTION);
+})
 
 window.addEventListener("message", receiveMessage, false);
 
@@ -130,6 +122,29 @@ function receiveMessage(event) {
     switch (event.data.type) {
       case 'OPEN_DOCUMENT':
         instance.loadDocument(event.data.file)
+        break;
+      case 'SAVE_FILE':
+        saveDocument();
+        break;
+      case 'APPLY_REDACTIONS':
+        if(confirm('This action will permanently remove all items selected for redaction. It cannot be undone once the document is saved.')) {
+          instance.showErrorMessage("Applying redactions");
+          instance.Core.documentViewer.getAnnotationManager().applyRedactions();setTimeout(() => {
+            instance.closeElements(["errorModal", "loadingModal"]);
+          }, 1500);
+        }
+        break;
+      case 'DRAW_REDACTIONS':
+        instance.showErrorMessage("Placing automatic redaction");
+          instance.Core.documentViewer.getAnnotationManager().applyRedactions();setTimeout(() => {
+            instance.closeElements(["errorModal", "loadingModal"]);
+          }, 1500);
+        let xfdf = `<?xml version="1.0" encoding="UTF-8" ?><xfdf xmlns="http://ns.adobe.com/xfdf/" xml:space="preserve"><pdf-info xmlns="http://www.pdftron.com/pdfinfo" version="2" import-version="3" /><fields /><annots><link page="0" rect="92,355.7,189.9,371.4" name="2bccea04a7673646-2224ceec69aedadc" width="0" style="solid"><OnActivation><Action Trigger="U"><URI Name="https://products.office.com/en-us/word"/></Action></OnActivation></link><redact page="0" rect="56.800,654.046,516.430,698.794" color="#FF0000" flags="print" name="d4cdfa05-5b67-94ac-6fc4-d63ba8cb650d" title="Thomas Winter" subject="Redact" date="D:20220225155742-05'00'" interior-color="#000000" width="1.5" creationdate="D:20220225155739-05'00'" coords="74.8,698.7940000000001,516.43,698.7940000000001,74.8,674.7460000000001,516.43,674.7460000000001,56.8,678.094,289.54,678.094,56.8,654.046,289.54,654.046"><contents>Lorem ipsum dolor sit amet, consectetur adipiscing
+        elit. Nunc ac faucibus odio.</contents><defaultappearance>1 0 0 RG /Helvetica 17.25 Tf</defaultappearance></redact><redact page="0" rect="56.800,565.543,538.244,596.927" color="#FF0000" flags="print" name="d1463603-623a-8654-85e2-16abb6853f82" title="Thomas Winter" subject="Redact" date="D:20220225155748-05'00'" interior-color="#000000" width="1.5" creationdate="D:20220225155745-05'00'" coords="142.3,596.927,538.2444999999999,596.927,142.3,580.2425000000001,538.2444999999999,580.2425000000001,56.8,582.227,434.45349999999996,582.227,56.8,565.5425,434.45349999999996,565.5425"><contents>Vivamus dapibus sodales ex, vitae malesuada ipsum cursus
+        convallis. Maecenas sed egestas nulla, ac condimentum orci.</contents><defaultappearance>1 0 0 RG /Helvetica 11.25 Tf</defaultappearance></redact><redact page="0" rect="260.091,506.743,392.296,523.343" color="#FF0000" flags="print" name="0b5bffd4-bc6b-4be3-0421-a832a4593af5" title="Thomas Winter" subject="Redact" date="D:20220225155751-05'00'" interior-color="#000000" width="1.5" creationdate="D:20220225155750-05'00'" coords="260.0905000000001,523.3430000000001,392.29600000000016,523.3430000000001,260.0905000000001,506.7425,392.29600000000016,506.7425"><contents>Morbi in ullamcorper elit.</contents><defaultappearance>1 0 0 RG /Helvetica 11.25 Tf</defaultappearance></redact><redact page="0" rect="92.800,439.342,376.541,456.027" color="#FF0000" flags="print" name="f3c385ff-f239-5a50-2141-6ec3bd134d71" title="Thomas Winter" subject="Redact" date="D:20220225155753-05'00'" interior-color="#000000" width="1.5" creationdate="D:20220225155753-05'00'" coords="92.8,456.027,376.54149999999987,456.027,92.8,439.3425,376.54149999999987,439.3425"><contents>Maecenas non lorem quis tellus placerat varius.</contents><defaultappearance>1 0 0 RG /Helvetica 11.25 Tf</defaultappearance></redact></annots><pages><defmtx matrix="1,0,0,-1,0,842" /></pages></xfdf>`
+        
+        const annotationManager = documentViewer.getAnnotationManager()
+        annotationManager.importAnnotations(xfdf)
         break;
       case 'OPEN_DOCUMENT_BLOB':
         const { blob, extension, filename, documentId } = event.data.payload;
