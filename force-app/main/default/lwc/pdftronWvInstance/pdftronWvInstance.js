@@ -40,13 +40,13 @@ export default class PdftronWvInstance extends LightningElement {
     //'/sfc/servlet.shepherd/version/download/0694x000000pEGyAAM'
     ///servlet/servlet.FileDownload?file=documentId0694x000000pEGyAAM
     registerListener('blobSelected', this.handleBlobSelected, this);
-    window.addEventListener('message', this.handleReceiveMessage.bind(this), false);
+    window.addEventListener('message', this.handleReceiveMessage, false);
     this.handleSubscribe();
   }
 
   disconnectedCallback() {
     unregisterAllListeners(this);
-    window.removeEventListener('message', this.handleReceiveMessage, true);
+    window.removeEventListener('message', this.handleReceiveMessage, false);
     releaseMessageContext(this.context);
     this.handleUnsubscribe();
   }
@@ -134,7 +134,7 @@ export default class PdftronWvInstance extends LightningElement {
 
   }
 
-  handleReceiveMessage(event) {
+  handleReceiveMessage = (event) {
     const me = this;
     if (event.isTrusted && typeof event.data === 'object') {
       switch (event.data.type) {
