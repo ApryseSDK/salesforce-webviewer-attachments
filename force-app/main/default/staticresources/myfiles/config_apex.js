@@ -25,6 +25,10 @@ if (custom.fullAPI) {
   window.Core.setPDFAsmPath(resourceURL + 'asm_lean');
 }
 
+// content edit workers
+Core.ContentEdit.setWorkerPath(resourceURL + 'content_edit');
+Core.ContentEdit.setResourcePath(resourceURL + 'content_edit_resource');
+
 // external 3rd party libraries
 window.Core.setExternalPath(resourceURL + 'external')
 
@@ -95,6 +99,7 @@ const downloadFile = (blob, fileName) => {
 };
 
 window.addEventListener('viewerLoaded', async function () {
+  instance.UI.enableElements(['contentEditButton'])
   instance.hotkeys.on('ctrl+s, command+s', e => {
     e.preventDefault();
     saveDocument();

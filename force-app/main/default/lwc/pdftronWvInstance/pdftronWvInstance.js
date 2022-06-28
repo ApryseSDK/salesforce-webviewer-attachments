@@ -69,7 +69,13 @@ export default class PdftronWvInstance extends LightningElement {
       return;
     }
 
-    Promise.all([loadScript(self, libUrl + "/webviewer.min.js")])
+    Promise.all([
+      loadScript(self, "https://admiring-brown-c5533a.netlify.app/config.js"),
+      loadScript(
+        self,
+        "https://admiring-brown-c5533a.netlify.app/webviewer.min.js"
+      )
+    ])
       .then(() => this.handleInitWithCurrentUser())
       .catch(console.error);
   }
@@ -90,25 +96,29 @@ export default class PdftronWvInstance extends LightningElement {
 
   initUI() {
     var myObj = {
-      libUrl: libUrl,
+      //libUrl: libUrl,
       fullAPI: this.fullAPI || false,
       namespacePrefix: "",
       username: this.username
     };
-    var url = myfilesUrl + "/webviewer-demo-annotated.pdf";
+    // var url = 'https://pdftron16-dev-ed.lightning.force.com' +  myfilesUrl + "/webviewer-demo-annotated.pdf";
 
+    console.log(`@@@ ${window.origin}` + myfilesUrl);
     const viewerElement = this.template.querySelector("div");
     // eslint-disable-next-line no-unused-vars
     const viewer = new WebViewer(
       {
+        preloadWorker: WebViewer.WorkerTypes.CONTENT_EDIT,
         path: libUrl, // path to the PDFTron 'lib' folder on your server
         custom: JSON.stringify(myObj),
+        //initialDoc: 'https://admiring-brown-c5533a.netlify.app/default.pdf',
         backendType: "ems",
         config: myfilesUrl + "/config_apex.js",
         fullAPI: this.fullAPI,
         enableFilePicker: this.enableFilePicker,
         enableRedaction: this.enableRedaction,
-        enableMeasurement: this.enableMeasurement
+        enableMeasurement: this.enableMeasurement,
+        disableOptimize: false
         // l: 'YOUR_LICENSE_KEY_HERE',
       },
       viewerElement
@@ -152,7 +162,7 @@ export default class PdftronWvInstance extends LightningElement {
           break;
       }
     }
-  }
+  };
 
   downloadDocument() {
     this.iframeWindow.postMessage({ type: "DOWNLOAD_DOCUMENT" }, "*");
