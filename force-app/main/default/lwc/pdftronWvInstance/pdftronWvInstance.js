@@ -69,13 +69,7 @@ export default class PdftronWvInstance extends LightningElement {
       return;
     }
 
-    Promise.all([
-      loadScript(self, "https://admiring-brown-c5533a.netlify.app/config.js"),
-      loadScript(
-        self,
-        "https://admiring-brown-c5533a.netlify.app/webviewer.min.js"
-      )
-    ])
+    Promise.all([loadScript(self, libUrl + "/webviewer.min.js")])
       .then(() => this.handleInitWithCurrentUser())
       .catch(console.error);
   }
