@@ -3,7 +3,7 @@ window.Core.forceBackendType('ems');
 
 var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
-resourceURL = resourceURL + custom.namespacePrefix;
+resourceURL = resourceURL + custom.namespacePrefix + 'V87';
 
 /**
  * The following `window.Core.set*` functions point WebViewer to the
@@ -29,6 +29,10 @@ if (custom.fullAPI) {
 window.Core.setExternalPath(resourceURL + 'external')
 
 var currentDocId;
+
+window.addEventListener('documentLoaded', () => {
+  console.log('document loaded!');
+});
 
 async function saveDocument() {
   // SF document file size limit
