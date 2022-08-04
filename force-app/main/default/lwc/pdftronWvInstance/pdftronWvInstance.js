@@ -1,7 +1,7 @@
 import { LightningElement, wire, track, api } from "lwc";
 import { CurrentPageReference } from "lightning/navigation";
 import { loadScript } from "lightning/platformResourceLoader";
-import libUrl from "@salesforce/resourceUrl/lib";
+import libUrl from "@salesforce/resourceUrl/V87lib";
 import myfilesUrl from "@salesforce/resourceUrl/myfiles";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import mimeTypes from "./mimeTypes";
@@ -108,7 +108,8 @@ export default class PdftronWvInstance extends LightningElement {
         fullAPI: this.fullAPI,
         enableFilePicker: this.enableFilePicker,
         enableRedaction: this.enableRedaction,
-        enableMeasurement: this.enableMeasurement
+        enableMeasurement: this.enableMeasurement,
+        enableOptimizedWorkers: false
         // l: 'YOUR_LICENSE_KEY_HERE',
       },
       viewerElement
@@ -152,7 +153,7 @@ export default class PdftronWvInstance extends LightningElement {
           break;
       }
     }
-  }
+  };
 
   downloadDocument() {
     this.iframeWindow.postMessage({ type: "DOWNLOAD_DOCUMENT" }, "*");
