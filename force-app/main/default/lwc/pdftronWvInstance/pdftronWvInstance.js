@@ -1,13 +1,15 @@
 import { LightningElement, wire, track, api } from "lwc";
 import { CurrentPageReference } from "lightning/navigation";
 import { loadScript } from "lightning/platformResourceLoader";
-import libUrl from "@salesforce/resourceUrl/lib";
+import libUrl from "@salesforce/resourceUrl/V87_lib";
 import myfilesUrl from "@salesforce/resourceUrl/myfiles";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import mimeTypes from "./mimeTypes";
 import { fireEvent, registerListener, unregisterAllListeners } from "c/pubsub";
 import saveDocument from "@salesforce/apex/PDFTron_ContentVersionController.saveDocument";
 import getUser from "@salesforce/apex/PDFTron_ContentVersionController.getUser";
+import getAnnotations from "@salesforce/apex/PDFTron_ContentVersionController.getAnnotations";
+import saveAnnotations from "@salesforce/apex/PDFTron_ContentVersionController.saveAnnotations";
 
 function _base64ToArrayBuffer(base64) {
   var binary_string = window.atob(base64);
@@ -33,6 +35,7 @@ export default class PdftronWvInstance extends LightningElement {
   @wire(CurrentPageReference)
   pageRef;
 
+  @track currentDocId = "";
   username;
 
   connectedCallback() {
@@ -52,6 +55,8 @@ export default class PdftronWvInstance extends LightningElement {
   }
 
   handleBlobSelected(record) {
+    this.currentDocId = record.cv.Id;
+
     const blobby = new Blob([_base64ToArrayBuffer(record.body)], {
       type: mimeTypes[record.FileExtension]
     });
@@ -105,14 +110,17 @@ export default class PdftronWvInstance extends LightningElement {
     // eslint-disable-next-line no-unused-vars
     const viewer = new WebViewer(
       {
+        preloadWorker: WebViewer.WorkerTypes.CONTENT_EDIT, // preload content edit worker
         path: libUrl, // path to the PDFTron 'lib' folder on your server
         custom: JSON.stringify(myObj),
         backendType: "ems",
         config: myfilesUrl + "/config_apex.js",
         fullAPI: this.fullAPI,
+        enableOptimizedWorkers: false, // no optimized workers were deployed
         enableFilePicker: this.enableFilePicker,
         enableRedaction: this.enableRedaction,
-        enableMeasurement: this.enableMeasurement
+        enableMeasurement: this.enableMeasurement,
+        loadAsPDF: true
         // l: 'YOUR_LICENSE_KEY_HERE',
       },
       viewerElement
@@ -127,6 +135,31 @@ export default class PdftronWvInstance extends LightningElement {
     const me = this;
     if (event.isTrusted && typeof event.data === "object") {
       switch (event.data.type) {
+        case "SAVE_ANNOTATIONS":
+          console.log(">>" + JSON.stringify(event.data.payload));
+          saveAnnotations(event.data.payload)
+            .then((response) => {
+              console.log("Saving annotations", response);
+            })
+            .catch((error) => {
+              console.error(error);
+              this.showErrorMessage(error);
+            });
+          break;
+        case "LOAD_ANNOTATIONS":
+          console.log("this.currentDocId", this.currentDocId);
+          getAnnotations({ currentDocId: this.currentDocId })
+            .then((result) => {
+              //console.log(`Loaded annotations: ${JSON.stringify(result)}`);
+              fireEvent(this.pageRef, "lastRefresh", "*");
+              console.log("result", result);
+              me.iframeWindow.postMessage(
+                { type: "LOAD_ANNOTATIONS_FINISHED", result },
+                window.location.origin
+              );
+            })
+            .catch(this.showErrorMessage);
+          break;
         case "SAVE_DOCUMENT":
           let cvId = event.data.payload.contentDocumentId;
           saveDocument({
