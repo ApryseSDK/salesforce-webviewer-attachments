@@ -119,8 +119,8 @@ export default class PdftronWvInstance extends LightningElement {
         enableOptimizedWorkers: false, // no optimized workers were deployed
         enableFilePicker: this.enableFilePicker,
         enableRedaction: this.enableRedaction,
-        enableMeasurement: this.enableMeasurement,
-        loadAsPDF: true
+        enableMeasurement: this.enableMeasurement
+        // loadAsPDF: true, // auto-convert MS Office to PDF for text editing
         // l: 'YOUR_LICENSE_KEY_HERE',
       },
       viewerElement
