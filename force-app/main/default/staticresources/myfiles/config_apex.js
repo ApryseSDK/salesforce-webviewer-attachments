@@ -130,11 +130,11 @@ async function editDocument(){
     extension: 'docx',
     officeOptions: {
       templateValues: {
-        'first_name': 'Joshua',
-        'last_name': 'Lore',
-        'dob': '04-07-1999',
-        'phone': '604-771-4497',
-        'email': 'jplore4@gmail.com'
+        'first_name': 'Jon',
+        'last_name': 'Jones',
+        'dob': '01-01-1900',
+        'phone': '604-123-1234',
+        'email': 'jjones@mail.com'
       }
     }});
 
