@@ -5,6 +5,7 @@ var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
 resourceURL = resourceURL + custom.namespacePrefix +'V87_';
 
+var global_document;
 /**
  * The following `window.Core.set*` functions point WebViewer to the
  * optimized source code specific for the Salesforce platform, to ensure the
@@ -58,7 +59,7 @@ window.addEventListener('viewerLoaded', async function () {
       title: 'tool.SaveDocument',
       img: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>',
       onClick: function () {
-        saveDocument();
+        editDocument();
       }
     }
     header.get('viewControlsButton').insertBefore(myCustomButton);
@@ -84,7 +85,7 @@ function receiveMessage(event) {
         const { blob, extension, filename, documentId } = event.data.payload;
         console.log("documentId", documentId);
         currentDocId = documentId;
-        instance.loadDocument(blob, { extension, filename, documentId })
+        instance.loadDocument(blob, { extension, filename, documentId})
         break;
       case 'DOCUMENT_SAVED':
         console.log(`${JSON.stringify(event.data)}`);
@@ -115,4 +116,28 @@ function receiveMessage(event) {
         break;
     }
   }
+}
+
+async function editDocument(){
+  // Grabs originsl document loaded
+  let doc = documentViewer.getDocument();
+
+  // Retrieve the buffer information for the officeToPDFBuffer call
+  let buffer = await doc.getFileData();
+
+  // Simulates applyTemplateValues but retrieves arraybuffer
+  let item = await Core.officeToPDFBuffer(buffer, {
+    extension: 'docx',
+    officeOptions: {
+      templateValues: {
+        'first_name': 'Joshua',
+        'last_name': 'Lore',
+        'dob': '04-07-1999',
+        'phone': '604-771-4497',
+        'email': 'jplore4@gmail.com'
+      }
+    }});
+
+  // loads the array buffer
+  instance.loadDocument(item)
 }
