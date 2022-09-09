@@ -39,7 +39,7 @@ var currentDocId;
 
 window.addEventListener('documentLoaded', () => {
   // select content edit tool on doc load
-  instance.UI.setToolMode(instance.Core.Tools.ToolNames.CONTENT_EDIT);
+  // instance.UI.setToolMode(instance.Core.Tools.ToolNames.CONTENT_EDIT);
 })
 
 window.addEventListener('viewerLoaded', async function () {
