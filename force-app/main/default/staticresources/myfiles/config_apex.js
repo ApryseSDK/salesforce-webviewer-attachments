@@ -1,9 +1,7 @@
-var resourceURL = '/resource/'
 window.Core.forceBackendType('ems');
 
 var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
-resourceURL = resourceURL + custom.namespacePrefix + 'V87';
 
 /**
  * The following `window.Core.set*` functions point WebViewer to the
@@ -11,22 +9,22 @@ resourceURL = resourceURL + custom.namespacePrefix + 'V87';
  * uploaded files stay under the 5mb limit
  */
 // office workers
-window.Core.setOfficeWorkerPath(resourceURL + 'office')
-window.Core.setOfficeAsmPath(resourceURL + 'office_asm');
-window.Core.setOfficeResourcePath(resourceURL + 'office_resource');
+window.Core.setOfficeWorkerPath(custom.workers.office)
+window.Core.setOfficeAsmPath(custom.workers.office_asm);
+window.Core.setOfficeResourcePath(custom.workers.office_resource);
 
 // pdf workers
-window.Core.setPDFResourcePath(resourceURL + 'resource')
+window.Core.setPDFResourcePath(custom.workers.resource)
 if (custom.fullAPI) {
-  window.Core.setPDFWorkerPath(resourceURL + 'pdf_full')
-  window.Core.setPDFAsmPath(resourceURL + 'asm_full');
+  window.Core.setPDFWorkerPath(custom.workers.pdf_full)
+  window.Core.setPDFAsmPath(custom.workers.asm_full);
 } else {
-  window.Core.setPDFWorkerPath(resourceURL + 'pdf_lean')
-  window.Core.setPDFAsmPath(resourceURL + 'asm_lean');
+  window.Core.setPDFWorkerPath(custom.workers.pdf_lean)
+  window.Core.setPDFAsmPath(custom.workers.asm_lean);
 }
 
 // external 3rd party libraries
-window.Core.setExternalPath(resourceURL + 'external')
+window.Core.setExternalPath(custom.workers.external)
 
 var currentDocId;
 

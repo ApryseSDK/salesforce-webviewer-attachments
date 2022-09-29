@@ -8,6 +8,16 @@ import mimeTypes from "./mimeTypes";
 import { fireEvent, registerListener, unregisterAllListeners } from "c/pubsub";
 import saveDocument from "@salesforce/apex/PDFTron_ContentVersionController.saveDocument";
 import getUser from "@salesforce/apex/PDFTron_ContentVersionController.getUser";
+import asm_full from "@salesforce/resourceUrl/V87asm_full";
+import external from "@salesforce/resourceUrl/V87external";
+import legacyOffice_asm from "@salesforce/resourceUrl/V87legacyOffice_asm";
+import legacyOffice_resource from "@salesforce/resourceUrl/V87legacyOffice_resource";
+import legacyOffice from "@salesforce/resourceUrl/V87legacyOffice";
+import office_asm from "@salesforce/resourceUrl/V87office_asm";
+import office_resource from "@salesforce/resourceUrl/V87office_resource";
+import office from "@salesforce/resourceUrl/V87office";
+import pdf_full from "@salesforce/resourceUrl/V87pdf_full";
+import resource from "@salesforce/resourceUrl/V87resource";
 
 function _base64ToArrayBuffer(base64) {
   var binary_string = window.atob(base64);
@@ -93,8 +103,22 @@ export default class PdftronWvInstance extends LightningElement {
       libUrl: libUrl,
       fullAPI: this.fullAPI || false,
       namespacePrefix: "",
-      username: this.username
+      username: this.username,
+      myfilesUrl: myfilesUrl,
+      workers: {
+        asm_full: asm_full,
+        external: external,
+        legacyOffice_asm: legacyOffice_asm,
+        legacyOffice_resource: legacyOffice_resource,
+        legacyOffice: legacyOffice,
+        office_asm: office_asm,
+        office_resource: office_resource,
+        office: office,
+        pdf_full: pdf_full,
+        resource: resource
+      }
     };
+
     var url = myfilesUrl + "/webviewer-demo-annotated.pdf";
 
     const viewerElement = this.template.querySelector("div");
@@ -106,6 +130,7 @@ export default class PdftronWvInstance extends LightningElement {
         backendType: "ems",
         config: myfilesUrl + "/config_apex.js",
         fullAPI: this.fullAPI,
+        initialDoc: url,
         enableFilePicker: this.enableFilePicker,
         enableRedaction: this.enableRedaction,
         enableMeasurement: this.enableMeasurement,
