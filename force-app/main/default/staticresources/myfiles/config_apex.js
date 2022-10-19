@@ -98,6 +98,22 @@ const downloadFile = (blob, fileName) => {
   setTimeout(() => URL.revokeObjectURL(link.href), 7000);
 };
 
+function createSavedModal(instance) {
+  const divInput = document.createElement('div');
+  divInput.innerText = 'File saved successfully.';
+  const modal = {
+    dataElement: 'savedModal',
+    body: {
+      className: 'myCustomModal-body',
+      style: {
+        'text-align': 'center'
+      },
+      children: [divInput]
+    }
+  }
+  instance.UI.addCustomModal(modal);
+}
+
 window.addEventListener('viewerLoaded', async function () {
   instance.hotkeys.on('ctrl+s, command+s', e => {
     e.preventDefault();
@@ -123,7 +139,7 @@ window.addEventListener('viewerLoaded', async function () {
   // to invoke annotManager.setCurrentUser
   instance.Core.documentViewer.getAnnotationManager().setCurrentUser(custom.username);
 
-  const annotationManager = await instance.Core.documentViewer.getAnnotationManager();
+  createSavedModal(instance);
 });
 
 window.addEventListener("message", receiveMessage, false);
@@ -142,9 +158,9 @@ function receiveMessage(event) {
         break;
       case 'DOCUMENT_SAVED':
         console.log(`${JSON.stringify(event.data)}`);
-        instance.showErrorMessage('Document saved ')
+        instance.UI.openElements(['savedModal']);
         setTimeout(() => {
-          instance.closeElements(['errorModal', 'loadingModal'])
+          instance.closeElements(['savedModal', 'loadingModal'])
         }, 2000)
         break;
       case 'LMS_RECEIVED':  
