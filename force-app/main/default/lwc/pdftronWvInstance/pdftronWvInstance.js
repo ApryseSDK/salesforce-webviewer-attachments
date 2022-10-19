@@ -1,15 +1,13 @@
 import { LightningElement, wire, track, api } from "lwc";
 import { CurrentPageReference } from "lightning/navigation";
 import { loadScript } from "lightning/platformResourceLoader";
-import libUrl from "@salesforce/resourceUrl/V87_lib";
+import libUrl from "@salesforce/resourceUrl/V890_lib";
 import myfilesUrl from "@salesforce/resourceUrl/myfiles";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import mimeTypes from "./mimeTypes";
 import { fireEvent, registerListener, unregisterAllListeners } from "c/pubsub";
 import saveDocument from "@salesforce/apex/PDFTron_ContentVersionController.saveDocument";
 import getUser from "@salesforce/apex/PDFTron_ContentVersionController.getUser";
-import getAnnotations from "@salesforce/apex/PDFTron_ContentVersionController.getAnnotations";
-import saveAnnotations from "@salesforce/apex/PDFTron_ContentVersionController.saveAnnotations";
 
 function _base64ToArrayBuffer(base64) {
   var binary_string = window.atob(base64);
@@ -36,7 +34,7 @@ export default class PdftronWvInstance extends LightningElement {
   pageRef;
 
   @track currentDocId = "";
-  username;
+  userData;
 
   connectedCallback() {
     registerListener("blobSelected", this.handleBlobSelected, this);
@@ -86,7 +84,7 @@ export default class PdftronWvInstance extends LightningElement {
   handleInitWithCurrentUser() {
     getUser()
       .then((result) => {
-        this.username = result;
+        this.userData = result;
         this.error = undefined;
 
         this.initUI();
@@ -102,7 +100,7 @@ export default class PdftronWvInstance extends LightningElement {
       libUrl: libUrl,
       fullAPI: this.fullAPI || false,
       namespacePrefix: "",
-      username: this.username
+      userData: this.userData
     };
     var url = myfilesUrl + "/webviewer-demo-annotated.pdf";
 
@@ -110,7 +108,7 @@ export default class PdftronWvInstance extends LightningElement {
     // eslint-disable-next-line no-unused-vars
     const viewer = new WebViewer(
       {
-        preloadWorker: WebViewer.WorkerTypes.CONTENT_EDIT, // preload content edit worker
+        // preloadWorker: WebViewer.WorkerTypes.CONTENT_EDIT, // preload content edit worker
         path: libUrl, // path to the PDFTron 'lib' folder on your server
         custom: JSON.stringify(myObj),
         backendType: "ems",

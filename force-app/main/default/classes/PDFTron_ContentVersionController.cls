@@ -19,66 +19,21 @@ public with sharing class PDFTron_ContentVersionController {
   };
 
   @AuraEnabled
-  public static string getAnnotations(String currentDocId) {
+  public static UserWrapper getUser() {
     try {
-      system.debug('id: ' + currentDocId);
-      List<Annotation__c> annotOld = [
-        SELECT Id, XFDF_String__c
-        FROM Annotation__c
-        WHERE Document_ID__c = :currentDocId
-        LIMIT 1
-      ];
-      system.debug(annotOld);
-      system.debug(annotOld.size());
-      if (annotOld.size() > 0) {
-        return annotOld[0].XFDF_String__c;
-      } else {
-        return '';
+      String permission = 'user';
+
+      if (FeatureManagement.checkPermission('Annotation_Admin')) {
+        permission = 'admin';
+      } else if (FeatureManagement.checkPermission('Annotation_Read_Only')) {
+        permission = 'guest';
       }
-    } catch (Exception e) {
-      throw new AuraHandledException(e.getMessage());
-    }
-  }
-
-  @AuraEnabled
-  public static void saveAnnotations(String xfdfString, String currentDocId) {
-    try {
-      system.debug(xfdfString);
-      system.debug(currentDocId);
-      List<Annotation__c> annotOld = [
-        SELECT Id, XFDF_String__c
-        FROM Annotation__c
-        WHERE Document_ID__c = :currentDocId
-        LIMIT 1
-      ];
-
-      if (annotOld.size() > 0) {
-        annotOld[0].Document_ID__c = currentDocId;
-        annotOld[0].XFDF_String__c = xfdfString;
-
-        update annotOld;
-      } else {
-        Annotation__c annot = new Annotation__c();
-        annot.Document_ID__c = currentDocId;
-        annot.XFDF_String__c = xfdfString;
-
-        insert annot;
-      }
-    } catch (Exception e) {
-      throw new AuraHandledException(e.getMessage());
-    }
-  }
-
-  @AuraEnabled
-  public static string getUser() {
-    try {
-      User currentUser = [
-        SELECT FirstName, LastName
-        FROM User
-        WHERE username = :UserInfo.getUsername()
-      ];
-
-      return currentUser.FirstName + ' ' + currentUser.LastName;
+      return new UserWrapper(
+        UserInfo.getFirstName(),
+        UserInfo.getLastName(),
+        UserInfo.getUserEmail(),
+        permission
+      );
     } catch (Exception e) {
       throw new AuraHandledException(e.getMessage());
     }
@@ -376,6 +331,32 @@ public with sharing class PDFTron_ContentVersionController {
       Decimal gb = Decimal.valueOf(Value);
       gb = gb.divide((1024 * 1024 * 1024), 2);
       return string.valueOf(gb) + ' GB';
+    }
+  }
+
+  public class UserWrapper {
+    @AuraEnabled
+    public String name { get; set; }
+    @AuraEnabled
+    public String firstName { get; set; }
+    @AuraEnabled
+    public String lastName { get; set; }
+    @AuraEnabled
+    public String email { get; set; }
+    @AuraEnabled
+    public String permission { get; set; }
+
+    public UserWrapper(
+      String firstName,
+      String lastName,
+      String email,
+      String permission
+    ) {
+      this.firstName = firstName;
+      this.lastName = lastName;
+      this.name = firstName + ' ' + lastName;
+      this.email = email;
+      this.permission = permission;
     }
   }
 

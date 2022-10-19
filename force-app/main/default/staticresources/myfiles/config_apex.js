@@ -3,7 +3,7 @@ window.Core.forceBackendType('ems');
 
 var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
-resourceURL = resourceURL + custom.namespacePrefix +'V87_';
+resourceURL = resourceURL + custom.namespacePrefix +'V89_';
 
 var global_document;
 /**
@@ -17,7 +17,7 @@ window.Core.setOfficeWorkerPath(resourceURL + 'office')
 window.Core.setOfficeAsmPath(resourceURL + 'office_asm');
 window.Core.setOfficeResourcePath(resourceURL + 'office_resource');
 
-// // content edit workers
+// // // content edit workers
 Core.ContentEdit.setWorkerPath(resourceURL + 'content_edit');
 Core.ContentEdit.setResourcePath(resourceURL + 'content_edit_resource');
 
@@ -36,6 +36,69 @@ window.Core.setExternalPath(resourceURL + 'external')
 window.Core.setCustomFontURL('https://pdftron.s3.amazonaws.com/custom/ID-zJWLuhTffd3c/vlocity/webfontsv20/');
 
 var currentDocId;
+async function saveDocument() {
+  // SF document file size limit
+  const docLimit = 5 * Math.pow(1024, 2);
+  const doc = instance.Core.documentViewer.getDocument();
+  if (!doc) {
+    return;
+  }
+  instance.openElement('loadingModal');
+  const fileSize = await doc.getFileSize();
+  const fileType = doc.getType();
+  const filename = doc.getFilename();
+  const xfdfString = await instance.Core.documentViewer.getAnnotationManager().exportAnnotations();
+  const data = await doc.getFileData({
+    // Saves the document with annotations in it
+    xfdfString
+  });
+
+  let binary = '';
+  const bytes = new Uint8Array(data);
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+
+  const base64Data = window.btoa(binary);
+
+  const payload = {
+    title: filename.replace(/\.[^/.]+$/, ""),
+    filename,
+    base64Data,
+    contentDocumentId: currentDocId
+  }
+  // Post message to LWC
+  fileSize < docLimit ? parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*') : downloadWebViewerFile();
+}
+
+const downloadWebViewerFile = async () => {
+  const doc = instance.Core.documentViewer.getDocument();
+
+  if (!doc) {
+    return;
+  }
+
+  const data = await doc.getFileData();
+  const arr = new Uint8Array(data);
+  const blob = new Blob([arr], { type: 'application/pdf' });
+
+  const filename = doc.getFilename();
+
+  downloadFile(blob, filename)
+}
+
+const downloadFile = (blob, fileName) => {
+  const link = document.createElement('a');
+  // create a blobURI pointing to our Blob
+  link.href = URL.createObjectURL(blob);
+  link.download = fileName;
+  // some browser needs the anchor to be in the doc
+  document.body.append(link);
+  link.click();
+  link.remove();
+  // in case the Blob uses a lot of memory
+  setTimeout(() => URL.revokeObjectURL(link.href), 7000);
+};
 
 window.addEventListener('documentLoaded', () => {
   // select content edit tool on doc load
@@ -59,18 +122,31 @@ window.addEventListener('viewerLoaded', async function () {
       title: 'tool.SaveDocument',
       img: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>',
       onClick: function () {
-        editDocument();
+        saveDocument();
       }
     }
     header.get('viewControlsButton').insertBefore(myCustomButton);
   });
 
-  // When the viewer has loaded, this makes the necessary call to get the
-  // pdftronWvInstance code to pass User Record information to this config file
-  // to invoke annotManager.setCurrentUser
-  instance.Core.documentViewer.getAnnotationManager().setCurrentUser(custom.username);
-
+  
   const annotationManager = await instance.Core.documentViewer.getAnnotationManager();
+
+  //pass user info from Salesforce to WebViewer
+  console.table(custom.userData) // log current user info
+
+  annotationManager.setCurrentUser(custom.userData.name); //set user name
+
+  // set user permissions
+  if(custom.userData.permission === 'admin') {
+    console.log(`Promoting ${custom.userData.name} to admin`);
+    annotationManager.promoteUserToAdmin();
+  } else if (custom.userData.permission === 'guest') {
+    console.log(`Setting ${custom.userData.name} to guest/read only`);
+    annotationManager.enableReadOnlyMode();
+  } else { // standard user, edit your own annotations/view all
+    annotationManager.demoteUserFromAdmin();
+    annotationManager.disableReadOnlyMode();
+  }
 });
 
 window.addEventListener("message", receiveMessage, false);
