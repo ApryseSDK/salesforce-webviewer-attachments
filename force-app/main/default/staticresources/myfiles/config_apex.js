@@ -3,7 +3,7 @@ window.Core.forceBackendType('ems');
 
 var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
-resourceURL = resourceURL + custom.namespacePrefix + 'V87';
+resourceURL = resourceURL + custom.namespacePrefix;
 
 /**
  * The following `window.Core.set*` functions point WebViewer to the
@@ -44,7 +44,11 @@ async function saveDocument() {
   instance.openElement('loadingModal');
   const fileSize = await doc.getFileSize();
   const fileType = doc.getType();
-  const filename = doc.getFilename();
+  let filename = doc.getFilename();
+
+  if (fileType == 'image'){
+    filename = filename.replace(/\.[^/.]+$/, ".pdf")
+  }
   const xfdfString = await instance.Core.documentViewer.getAnnotationManager().exportAnnotations();
   const data = await doc.getFileData({
     // Saves the document with annotations in it
@@ -143,6 +147,8 @@ window.addEventListener('viewerLoaded', async function () {
 });
 
 window.addEventListener("message", receiveMessage, false);
+
+
 
 function receiveMessage(event) {
   if (event.isTrusted && typeof event.data === 'object') {
