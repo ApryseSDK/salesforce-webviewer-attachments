@@ -1,18 +1,13 @@
 <template>
   <div class="slds-grid slds-grid--vertical-stretch slds-p-bottom_x-small">
-    <template if:false={loadFinished}>
-      <div class="spinnerContainer">
-        <lightning-spinner
-          alternative-text="Loading"
-          size="small"
-        ></lightning-spinner>
-      </div>
-    </template>
     <div id="attachmentCombobox" class="slds-col">
       <c-lookup
         onsearch={handleSearch}
         onselectionchange={handleSingleSelectionChange}
         placeholder="Open File in WebViewer..."
+        onremoveselection={handleRemoveSelection}
+        disabled={lookupAccess}
+        is-multi-entry
       >
       </c-lookup>
     </div>
@@ -28,6 +23,7 @@
           </lightning-button-icon>
         </lightning-button-group>
       </div>
+
       <!--Use template if:true to display/hide popup based on isModalOpen value-->
       <template if:true={isModalOpen}>
         <!-- Modal/Popup Box LWC starts here -->
@@ -43,11 +39,7 @@
             <!-- Modal/Popup Box LWC header here -->
             <header class="slds-modal__header">
               <button
-                class="
-                  slds-button slds-button_icon
-                  slds-modal__close
-                  slds-button_icon-inverse
-                "
+                class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
                 title="Close"
                 onclick={closeModal}
               >

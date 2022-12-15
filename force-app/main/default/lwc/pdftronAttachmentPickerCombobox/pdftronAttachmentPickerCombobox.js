@@ -11,20 +11,22 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
   error;
 
   @track isModalOpen = false;
+  lookupAccess = false;
 
   @track value = "";
   @track picklistOptions = [];
   @track isSaving = false;
-  @track loadFinished = false;
   documentsRetrieved = false;
   @api recordId;
   @track attachments = [];
   @wire(CurrentPageReference) pageRef;
 
+  files;
+  multi_selection;
+
   renderedCallback() {
     this.hasRecord = this.recordId ? true : false;
     if (!this.recordId) {
-      this.loadFinished = true;
       return;
     }
     if (!this.documentsRetrieved) {
@@ -32,9 +34,7 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
         .then((data) => {
           this.attachments = data;
           this.initLookupDefaultResults();
-
           this.error = undefined;
-          this.loadFinished = true;
           this.documentsRetrieved = true;
         })
         .catch((error) => {
@@ -47,6 +47,7 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
 
   connectedCallback() {
     registerListener("refreshOnSave", this.refreshOnSave, this);
+    registerListener("finishLoad", this.finishLoad, this);
     this.initLookupDefaultResults();
   }
 
@@ -94,26 +95,33 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
       });
   }
 
-  handleSingleSelectionChange(event) {
-    this.checkForErrors();
+  handleRemoveSelection(event) {
+    console.log(event.detail);
+    fireEvent(this.pageRef, "removeSelected", event.detail);
+    console.log("remove");
+  }
 
-    if (event.detail.length < 1) {
+  handleSingleSelectionChange(event) {
+    if (event.detail.length === 0) {
       this.handleClose();
       return;
+    } else {
+      this.getFile(event.detail[event.detail.length - 1]);
     }
+    console.log("select");
+  }
 
-    this.isLoading = true;
-
-    getFileDataFromId({ Id: event.detail[0] })
+  getFile(recId) {
+    this.lookupAccess = true;
+    console.log(recId);
+    getFileDataFromId({ Id: recId })
       .then((result) => {
-        fireEvent(this.pageRef, "blobSelected", result);
-        this.isLoading = false;
+        fireEvent(this.pageRef, "filesSelected", result);
       })
       .catch((error) => {
         // TODO: handle error
         this.error = error;
         console.error(error);
-        this.isLoading = false;
         let def_message =
           "We have encountered an error while handling your file. ";
 
@@ -151,21 +159,25 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
   }
 
   refreshOnSave() {
-    this.loadFinished = false;
-    getAttachments({ recordId: this.recordId })
-      .then((data) => {
-        this.attachments = data;
-        this.initLookupDefaultResults();
+    if (this.recordId) {
+      getAttachments({ recordId: this.recordId })
+        .then((data) => {
+          this.attachments = data;
+          this.initLookupDefaultResults();
 
-        this.error = undefined;
-        this.loadFinished = true;
-        this.documentsRetrieved = true;
-      })
-      .catch((error) => {
-        console.error(error);
-        this.showNotification("Error", error, "error");
-        this.error = error;
-      });
+          this.error = undefined;
+          this.documentsRetrieved = true;
+        })
+        .catch((error) => {
+          console.error(error);
+          this.showNotification("Error", error, "error");
+          this.error = error;
+        });
+    }
+  }
+
+  finishLoad() {
+    this.lookupAccess = false;
   }
 
   handleDownload() {

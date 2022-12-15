@@ -36,15 +36,30 @@ export default class PdftronWvInstance extends LightningElement {
   username;
 
   connectedCallback() {
+    registerListener("removeSelected", this.handleRemoveSelected, this);
     registerListener("blobSelected", this.handleBlobSelected, this);
     registerListener("closeDocument", this.closeDocument, this);
     registerListener("downloadDocument", this.downloadDocument, this);
+    registerListener("filesSelected", this.handleFilesSelected, this);
     window.addEventListener("message", this.handleReceiveMessage);
   }
 
   disconnectedCallback() {
     unregisterAllListeners(this);
     window.removeEventListener("message", this.handleReceiveMessage);
+  }
+
+  handleFilesSelected(file) {
+    const blobby = new Blob([_base64ToArrayBuffer(file.body)], {
+      type: mimeTypes[file.FileExtension]
+    });
+    let item = {
+      blob: blobby,
+      extension: file.cv.FileExtension,
+      filename: file.cv.Title + "." + file.cv.FileExtension,
+      documentId: file.cv.Id
+    };
+    this.iframeWindow.postMessage({ type: "MULTI_FILES", item }, window.origin);
   }
 
   handleBlobSelected(record) {
@@ -149,6 +164,9 @@ export default class PdftronWvInstance extends LightningElement {
               this.showNotification("Error", error.body, "error");
             });
           break;
+        case "FINISH_LOAD":
+          fireEvent(this.pageRef, "finishLoad");
+          break;
         default:
           break;
       }
@@ -162,5 +180,12 @@ export default class PdftronWvInstance extends LightningElement {
   @api
   closeDocument() {
     this.iframeWindow.postMessage({ type: "CLOSE_DOCUMENT" }, "*");
+  }
+
+  handleRemoveSelected(file) {
+    this.iframeWindow.postMessage(
+      { type: "REMOVE_FILES", file },
+      window.origin
+    );
   }
 }

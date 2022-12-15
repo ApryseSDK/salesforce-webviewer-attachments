@@ -34,7 +34,7 @@ window.addEventListener('documentLoaded', () => {
   console.log('document loaded!');
 });
 
-async function saveDocument() {
+async function saveDocument(filename) {
   // SF document file size limit
   const docLimit = 5 * Math.pow(1024, 2);
   const doc = instance.Core.documentViewer.getDocument();
@@ -44,7 +44,8 @@ async function saveDocument() {
   instance.openElement('loadingModal');
   const fileSize = await doc.getFileSize();
   const fileType = doc.getType();
-  const filename = doc.getFilename();
+  // const filename = doc.getFilename();
+  // const filename = doc.getFilename();
   const xfdfString = await instance.Core.documentViewer.getAnnotationManager().exportAnnotations();
   const data = await doc.getFileData({
     // Saves the document with annotations in it
@@ -66,7 +67,7 @@ async function saveDocument() {
     contentDocumentId: currentDocId
   }
   // Post message to LWC
-  fileSize < docLimit ? parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, '*') : downloadWebViewerFile();
+  fileSize < docLimit ? parent.postMessage({ type: 'SAVE_DOCUMENT', payload }, window.origin) : downloadWebViewerFile();
 }
 
 const downloadWebViewerFile = async () => {
@@ -131,15 +132,17 @@ window.addEventListener('viewerLoaded', async function () {
         saveDocument();
       }
     }
+    
     header.get('viewControlsButton').insertBefore(myCustomButton);
   });
 
   // When the viewer has loaded, this makes the necessary call to get the
   // pdftronWvInstance code to pass User Record information to this config file
   // to invoke annotManager.setCurrentUser
+  instance.UI.setCustomModal(modal);
   instance.Core.documentViewer.getAnnotationManager().setCurrentUser(custom.username);
 
-  createSavedModal(instance);
+  // createSavedModal(instance);
 });
 
 window.addEventListener("message", receiveMessage, false);
@@ -163,6 +166,15 @@ function receiveMessage(event) {
           instance.closeElements(['savedModal', 'loadingModal'])
         }, 2000)
         break;
+      case 'MULTI_FILES':
+        instance.openElement('loadingModal');
+        const { item } = event.data;
+        loadMultipleDocuments(item);
+        break
+      case 'REMOVE_FILES':
+        const { file } = event.data;
+        removeDocuments(file);
+        break
       case 'LMS_RECEIVED':  
         instance.loadDocument(event.data.payload.message, {
           filename: event.data.payload.filename,
@@ -178,5 +190,191 @@ function receiveMessage(event) {
       default:
         break;
     }
+  }
+}
+
+var loaded_files = [];
+var initialDoc;
+
+const loadMultipleDocuments = async (item) => {
+  let doc = documentViewer.getDocument();
+  //PDFNet needs to be initialized before usage
+  if(!initialDoc){
+    currentDocId = item.documentId;
+    initialDoc = await Core.createDocument(
+      item.blob,
+      {
+          extension: item.extension,
+          docId: item.documentId,
+          filename: item.filename,
+          loadAsPDF: true
+      }
+    );
+
+    loaded_files.push({
+      docId: item.documentId,
+      pages: pageRange(1, initialDoc.getPageCount())
+    })
+    instance.loadDocument(initialDoc, {
+      extension: item.extension
+    });
+  } else {
+    
+    let file_added = await Core.createDocument(
+      item.blob,
+      {
+        extension: item.extension,
+        docId: item.documentId,
+        filename: item.filename,
+        loadAsPDF: true
+      }
+    )
+    loaded_files.push({
+      docId: item.documentId,
+      pages: pageRange(initialDoc.getPageCount() + 1, initialDoc.getPageCount() + file_added.getPageCount())
+    })
+
+    await doc.insertPages(file_added);
+
+  }
+  instance.closeElements(['loadingModal']);
+  parent.postMessage({ type: 'FINISH_LOAD' }, window.origin)
+}
+
+function pageRange(start, end){
+  return [...Array(end - start + 1).keys()].map(x => x + start);
+}
+
+
+const removeDocuments = (file) => {
+  let deleted_pages;
+  let update;
+
+  if (loaded_files.length > 1){
+    update = loaded_files.filter((item, index) => {
+                if (item.docId == file) {
+                  initialDoc.removePages(item.pages);
+                  deleted_pages = {
+                    length: item.pages.length,
+                    index: index
+                  };
+                  return false;
+                }
+                return true;
+              });
+
+
+    update.forEach((item, index) => {
+      if (index >= deleted_pages.index) {
+        item.pages.forEach((element, index) => {
+          item.pages[index] = element - deleted_pages.length;
+        })
+        update[index].pages = item.pages;
+      }
+    })
+  } else {
+    currentDocId = undefined;
+    update = [];
+    instance.closeDocument();
+    initialDoc = undefined;
+  }
+  
+  loaded_files = update;
+  console.log(loaded_files);
+}
+
+function altogetherSave(filename){
+  if (!filename){
+    let d = new Date();
+    let sub_filename = 'redacted_file' + '(' + d.toLocaleDateString() + '_' + d.toLocaleTimeString() + ')';
+    saveDocument(sub_filename + '.pdf');
+  } else {
+    saveDocument(filename + '.pdf');
+  }
+  
+  instance.UI.closeElements(['saveDocumentModal']);
+}
+
+const modal = {
+  dataElement: 'saveDocumentModal',
+  render: function renderCustomModal(){
+    var separate_save = false;
+    var div = document.createElement("div");
+    div.style.color = '#666c72';
+    div.style.backgroundColor = 'white';
+    div.style.padding = '10px 10px';
+    div.style.borderRadius = '5px';
+
+    var title = document.createElement("h3");
+    title.innerText = "File Save Options";
+    title.style.marginTop = '0px';
+
+    var file_group_div = document.createElement("div");   
+    var file_group = document.createElement("input");
+    file_group.type = 'radio';
+    file_group.value = 'separate';
+    file_group.id = 'file_group';
+    file_group.name = 'file_save';
+    file_group.checked = 'checked';
+    file_group.addEventListener('click', function(){
+      separate_save = false;
+      file_input.disabled = false;
+    });
+    var file_group_label = document.createElement("label");
+    file_group_label.for = 'file_group';
+    file_group_label.innerHTML = 'Save in one file';
+
+
+    var file_sep_div = document.createElement("div"); 
+    var file_sep = document.createElement("input");
+    file_sep.type = 'radio';
+    file_sep.value = 'separate';
+    file_sep.id = 'file_sep';
+    file_sep.name = 'file_save';
+    file_sep.addEventListener('click', function(){
+      separate_save = true;
+      file_input.disabled = true;
+    });
+
+    var file_sep_label = document.createElement("label");
+    file_sep_label.for = 'file_sep';
+    file_sep_label.innerHTML = 'Save in separate files';
+
+    var file_input = document.createElement("input");
+    file_input.type = "text";
+
+    var file_button = document.createElement("button");
+    file_button.innerHTML = "Save";
+    file_button.type = "button";
+    file_button.className = "button";
+    file_button.onclick = function() {
+      if (separate_save){
+        separateSave();
+      } else {
+        altogetherSave(file_input.value);
+      }
+    }
+
+
+
+
+    var form = document.createElement("form");
+    file_group_div.appendChild(file_group);
+    file_group_div.appendChild(file_group_label);
+    file_sep_div.appendChild(file_sep);
+    file_sep_div.appendChild(file_sep_label);
+    form.appendChild(file_group_div);
+    // form.appendChild(file_sep_div);
+    var head = document.createElement("div");
+    var body = document.createElement("div");
+    
+    head.appendChild(title);
+    body.appendChild(form);
+    body.appendChild(file_input);
+    body.appendChild(file_button);
+    div.appendChild(head);
+    div.appendChild(body)
+
+    return div
   }
 }
