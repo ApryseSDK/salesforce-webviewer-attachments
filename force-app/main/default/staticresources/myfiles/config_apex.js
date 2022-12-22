@@ -3,7 +3,7 @@ window.Core.forceBackendType('ems');
 
 var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
-resourceURL = resourceURL + custom.namespacePrefix +'V87_';
+resourceURL = resourceURL + custom.namespacePrefix +'V810';
 
 /**
  * The following `window.Core.set*` functions point WebViewer to the
@@ -16,7 +16,7 @@ window.Core.setOfficeWorkerPath(resourceURL + 'office')
 window.Core.setOfficeAsmPath(resourceURL + 'office_asm');
 window.Core.setOfficeResourcePath(resourceURL + 'office_resource');
 
-// // content edit workers
+// content edit workers
 Core.ContentEdit.setWorkerPath(resourceURL + 'content_edit');
 Core.ContentEdit.setResourcePath(resourceURL + 'content_edit_resource');
 
@@ -32,18 +32,15 @@ if (custom.fullAPI) {
 
 // external 3rd party libraries
 window.Core.setExternalPath(resourceURL + 'external')
-window.Core.setCustomFontURL('https://pdftron.s3.amazonaws.com/custom/ID-zJWLuhTffd3c/vlocity/webfontsv20/');
+
+instance.UI.enableFeatures(instance.Feature.ContentEdit);
 
 var currentDocId;
 
 window.addEventListener('documentLoaded', () => {
-  // select content edit tool on doc load
-  instance.UI.setToolMode(instance.Core.Tools.ToolNames.CONTENT_EDIT);
 })
 
 window.addEventListener('viewerLoaded', async function () {
-  // show content edit button in the UI
-  instance.UI.enableElements(['contentEditButton']);
 
   instance.hotkeys.on('ctrl+s, command+s', e => {
     e.preventDefault();
@@ -72,7 +69,7 @@ window.addEventListener('viewerLoaded', async function () {
   const annotationManager = await instance.Core.documentViewer.getAnnotationManager();
 });
 
-window.addEventListener("message", receiveMessage, false);
+instance.Core.documentViewer.addEventListener("message", receiveMessage, false);
 
 function receiveMessage(event) {
   if (event.isTrusted && typeof event.data === 'object') {

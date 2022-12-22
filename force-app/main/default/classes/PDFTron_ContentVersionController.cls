@@ -19,57 +19,6 @@ public with sharing class PDFTron_ContentVersionController {
   };
 
   @AuraEnabled
-  public static string getAnnotations(String currentDocId) {
-    try {
-      system.debug('id: ' + currentDocId);
-      List<Annotation__c> annotOld = [
-        SELECT Id, XFDF_String__c
-        FROM Annotation__c
-        WHERE Document_ID__c = :currentDocId
-        LIMIT 1
-      ];
-      system.debug(annotOld);
-      system.debug(annotOld.size());
-      if (annotOld.size() > 0) {
-        return annotOld[0].XFDF_String__c;
-      } else {
-        return '';
-      }
-    } catch (Exception e) {
-      throw new AuraHandledException(e.getMessage());
-    }
-  }
-
-  @AuraEnabled
-  public static void saveAnnotations(String xfdfString, String currentDocId) {
-    try {
-      system.debug(xfdfString);
-      system.debug(currentDocId);
-      List<Annotation__c> annotOld = [
-        SELECT Id, XFDF_String__c
-        FROM Annotation__c
-        WHERE Document_ID__c = :currentDocId
-        LIMIT 1
-      ];
-
-      if (annotOld.size() > 0) {
-        annotOld[0].Document_ID__c = currentDocId;
-        annotOld[0].XFDF_String__c = xfdfString;
-
-        update annotOld;
-      } else {
-        Annotation__c annot = new Annotation__c();
-        annot.Document_ID__c = currentDocId;
-        annot.XFDF_String__c = xfdfString;
-
-        insert annot;
-      }
-    } catch (Exception e) {
-      throw new AuraHandledException(e.getMessage());
-    }
-  }
-
-  @AuraEnabled
   public static string getUser() {
     try {
       User currentUser = [
