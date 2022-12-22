@@ -3,7 +3,7 @@ window.Core.forceBackendType('ems');
 
 var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
-resourceURL = resourceURL + custom.namespacePrefix +'V810';
+resourceURL = resourceURL + custom.namespacePrefix;
 
 /**
  * The following `window.Core.set*` functions point WebViewer to the
@@ -38,9 +38,14 @@ instance.UI.enableFeatures(instance.Feature.ContentEdit);
 var currentDocId;
 
 window.addEventListener('documentLoaded', () => {
+  // select content edit tool on doc load
+  
 })
 
 window.addEventListener('viewerLoaded', async function () {
+  // show content edit button in the UI
+  instance.UI.enableFeatures([instance.Feature.ContentEdit]);
+  instance.setToolbarGroup(instance.UI.ToolbarGroup.EDIT_TEXT);
 
   instance.hotkeys.on('ctrl+s, command+s', e => {
     e.preventDefault();
