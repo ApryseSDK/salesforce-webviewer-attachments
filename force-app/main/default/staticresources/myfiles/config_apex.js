@@ -1,9 +1,12 @@
 var resourceURL = '/resource/'
 window.Core.forceBackendType('ems');
 
+var documentViewer = instance.Core.documentViewer;
+
 var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
-resourceURL = resourceURL + custom.namespacePrefix;
+var version = ''
+resourceURL = resourceURL + custom.namespacePrefix + version;
 
 /**
  * The following `window.Core.set*` functions point WebViewer to the
@@ -14,6 +17,9 @@ resourceURL = resourceURL + custom.namespacePrefix;
 window.Core.setOfficeWorkerPath(resourceURL + 'office')
 window.Core.setOfficeAsmPath(resourceURL + 'office_asm');
 window.Core.setOfficeResourcePath(resourceURL + 'office_resource');
+
+//office editing
+window.Core.setOfficeEditorWorkerPath(resourceURL + 'office_edit');
 
 // pdf workers
 window.Core.setPDFResourcePath(resourceURL + 'resource')
@@ -118,7 +124,7 @@ function createSavedModal(instance) {
   instance.UI.addCustomModal(modal);
 }
 
-window.addEventListener('viewerLoaded', async function () {
+documentViewer.addEventListener('viewerLoaded', async function () {
   instance.hotkeys.on('ctrl+s, command+s', e => {
     e.preventDefault();
     saveDocument();
@@ -146,7 +152,7 @@ window.addEventListener('viewerLoaded', async function () {
   createSavedModal(instance);
 });
 
-window.addEventListener("message", receiveMessage, false);
+documentViewer.addEventListener("message", receiveMessage, false);
 
 
 
