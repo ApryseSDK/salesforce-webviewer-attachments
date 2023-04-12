@@ -10,6 +10,9 @@ resourceURL = resourceURL + custom.namespacePrefix;
  * optimized source code specific for the Salesforce platform, to ensure the
  * uploaded files stay under the 5mb limit
  */
+
+window.Core.ContentEdit.setWorkerPath(resourceURL + 'content_edit');
+window.Core.ContentEdit.setResourcePath(resourceURL + 'content_edit_resource');
 // office workers
 window.Core.setOfficeWorkerPath(resourceURL + 'office')
 window.Core.setOfficeAsmPath(resourceURL + 'office_asm');
@@ -27,6 +30,8 @@ if (custom.fullAPI) {
 
 // external 3rd party libraries
 window.Core.setExternalPath(resourceURL + 'external')
+
+
 
 var currentDocId;
 
@@ -119,6 +124,9 @@ function createSavedModal(instance) {
 }
 
 window.addEventListener('viewerLoaded', async function () {
+
+  instance.UI.enableFeatures(instance.Feature.ContentEdit);
+  
   instance.hotkeys.on('ctrl+s, command+s', e => {
     e.preventDefault();
     saveDocument();
