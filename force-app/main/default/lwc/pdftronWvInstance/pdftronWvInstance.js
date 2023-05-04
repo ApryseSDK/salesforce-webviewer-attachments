@@ -1,7 +1,7 @@
 import { LightningElement, wire, track, api } from "lwc";
 import { CurrentPageReference } from "lightning/navigation";
 import { loadScript } from "lightning/platformResourceLoader";
-import libUrl from "@salesforce/resourceUrl/lib";
+import libUrl from "@salesforce/resourceUrl/honey_lib";
 import myfilesUrl from "@salesforce/resourceUrl/myfiles";
 import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import mimeTypes from "./mimeTypes";
@@ -58,7 +58,7 @@ export default class PdftronWvInstance extends LightningElement {
       filename: record.cv.Title + "." + record.cv.FileExtension,
       documentId: record.cv.Id
     };
-
+    console.log("payload", payload);
     this.iframeWindow.postMessage({ type: "OPEN_DOCUMENT_BLOB", payload }, "*");
   }
 
@@ -110,7 +110,8 @@ export default class PdftronWvInstance extends LightningElement {
         enableRedaction: this.enableRedaction,
         enableMeasurement: this.enableMeasurement,
         enableOptimizedWorkers: false,
-        enableOfficeEditing: true
+        loadAsPDF: true
+        // enableOfficeEditing: true
         // l: 'YOUR_LICENSE_KEY_HERE',
       },
       viewerElement

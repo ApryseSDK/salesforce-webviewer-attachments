@@ -5,7 +5,7 @@ var documentViewer = instance.Core.documentViewer;
 
 var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
-var version = ''
+var version = 'honey_'
 resourceURL = resourceURL + custom.namespacePrefix + version;
 
 /**
@@ -125,13 +125,13 @@ function createSavedModal(instance) {
 }
 
 documentViewer.addEventListener('viewerLoaded', async function () {
-  instance.hotkeys.on('ctrl+s, command+s', e => {
+  instance.UI.hotkeys.on('ctrl+s, command+s', e => {
     e.preventDefault();
     saveDocument();
   });
 
   // Create a button, with a disk icon, to invoke the saveDocument function
-  instance.setHeaderItems(function (header) {
+  instance.UI.setHeaderItems(function (header) {
     var myCustomButton = {
       type: 'actionButton',
       dataElement: 'saveDocumentButton',
@@ -152,7 +152,7 @@ documentViewer.addEventListener('viewerLoaded', async function () {
   createSavedModal(instance);
 });
 
-documentViewer.addEventListener("message", receiveMessage, false);
+window.addEventListener("message", receiveMessage, false);
 
 
 
@@ -166,7 +166,7 @@ function receiveMessage(event) {
         const { blob, extension, filename, documentId } = event.data.payload;
         console.log("documentId", documentId);
         currentDocId = documentId;
-        instance.loadDocument(blob, { extension, filename, documentId })
+        instance.UI.loadDocument(blob, { extension, filename, documentId })
         break;
       case 'DOCUMENT_SAVED':
         console.log(`${JSON.stringify(event.data)}`);
@@ -185,7 +185,7 @@ function receiveMessage(event) {
         downloadWebViewerFile();
         break;
       case 'CLOSE_DOCUMENT':
-        instance.closeDocument()
+        instance.UI.closeDocument()
         break;
       default:
         break;
