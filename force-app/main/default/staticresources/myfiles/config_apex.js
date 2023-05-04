@@ -141,7 +141,7 @@ documentViewer.addEventListener('viewerLoaded', async function () {
         saveDocument();
       }
     }
-    header.get('viewControlsButton').insertBefore(myCustomButton);
+    header.push(myCustomButton);
   });
 
   // When the viewer has loaded, this makes the necessary call to get the
