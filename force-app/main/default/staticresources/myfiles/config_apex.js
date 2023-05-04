@@ -1,9 +1,12 @@
 var resourceURL = '/resource/'
 window.Core.forceBackendType('ems');
 
+var documentViewer = instance.Core.documentViewer;
+
 var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
-resourceURL = resourceURL + custom.namespacePrefix;
+var version = 'honey_'
+resourceURL = resourceURL + custom.namespacePrefix + version;
 
 /**
  * The following `window.Core.set*` functions point WebViewer to the
@@ -14,6 +17,9 @@ resourceURL = resourceURL + custom.namespacePrefix;
 window.Core.setOfficeWorkerPath(resourceURL + 'office')
 window.Core.setOfficeAsmPath(resourceURL + 'office_asm');
 window.Core.setOfficeResourcePath(resourceURL + 'office_resource');
+
+//office editing
+window.Core.setOfficeEditorWorkerPath(resourceURL + 'office_edit');
 
 // pdf workers
 window.Core.setPDFResourcePath(resourceURL + 'resource')
@@ -118,14 +124,14 @@ function createSavedModal(instance) {
   instance.UI.addCustomModal(modal);
 }
 
-window.addEventListener('viewerLoaded', async function () {
-  instance.hotkeys.on('ctrl+s, command+s', e => {
+documentViewer.addEventListener('viewerLoaded', async function () {
+  instance.UI.hotkeys.on('ctrl+s, command+s', e => {
     e.preventDefault();
     saveDocument();
   });
 
   // Create a button, with a disk icon, to invoke the saveDocument function
-  instance.setHeaderItems(function (header) {
+  instance.UI.setHeaderItems(function (header) {
     var myCustomButton = {
       type: 'actionButton',
       dataElement: 'saveDocumentButton',
@@ -160,7 +166,7 @@ function receiveMessage(event) {
         const { blob, extension, filename, documentId } = event.data.payload;
         console.log("documentId", documentId);
         currentDocId = documentId;
-        instance.loadDocument(blob, { extension, filename, documentId })
+        instance.UI.loadDocument(blob, { extension, filename, documentId })
         break;
       case 'DOCUMENT_SAVED':
         console.log(`${JSON.stringify(event.data)}`);
@@ -179,7 +185,7 @@ function receiveMessage(event) {
         downloadWebViewerFile();
         break;
       case 'CLOSE_DOCUMENT':
-        instance.closeDocument()
+        instance.UI.closeDocument()
         break;
       default:
         break;
