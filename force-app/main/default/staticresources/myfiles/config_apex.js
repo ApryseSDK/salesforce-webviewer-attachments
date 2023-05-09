@@ -5,7 +5,7 @@ var documentViewer = instance.Core.documentViewer;
 
 var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
-var version = 'honey_'
+var version = ''
 resourceURL = resourceURL + custom.namespacePrefix + version;
 
 /**
