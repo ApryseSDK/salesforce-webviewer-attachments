@@ -124,7 +124,7 @@ function createSavedModal(instance) {
   instance.UI.addCustomModal(modal);
 }
 
-documentViewer.addEventListener('viewerLoaded', async function () {
+instance.UI.addEventListener('viewerLoaded', async function () {
   instance.UI.hotkeys.on('ctrl+s, command+s', e => {
     e.preventDefault();
     saveDocument();
