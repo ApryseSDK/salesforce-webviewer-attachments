@@ -151,6 +151,30 @@ export default class PdftronWvInstance extends LightningElement {
               this.showNotification("Error", error.body, "error");
             });
           break;
+        case "EXTRACT_DOCUMENT":
+          saveDocument({
+            json: JSON.stringify(event.data.payload),
+            recordId: this.recordId ? this.recordId : "",
+            cvId: "" // undefined cvId will result in net new document
+          })
+            .then((response) => {
+              me.iframeWindow.postMessage(
+                { type: "DOCUMENT_SAVED", response },
+                "*"
+              );
+              fireEvent(this.pageRef, "refreshOnSave", response);
+            })
+            .catch((error) => {
+              me.iframeWindow.postMessage(
+                { type: "DOCUMENT_SAVED", error },
+                "*"
+              );
+              fireEvent(this.pageRef, "refreshOnSave", error);
+              console.error(event.data.payload.contentDocumentId);
+              console.error(JSON.stringify(error));
+              this.showNotification("Error", error.body, "error");
+            });
+          break;
         default:
           break;
       }
