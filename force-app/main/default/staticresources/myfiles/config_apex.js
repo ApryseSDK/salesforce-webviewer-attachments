@@ -47,7 +47,7 @@ async function saveDocument() {
   if (!doc) {
     return;
   }
-  instance.openElement('loadingModal');
+  instance.UI.openElement('loadingModal');
   const fileSize = await doc.getFileSize();
   const fileType = doc.getType();
   let filename = doc.getFilename();
