@@ -33,6 +33,7 @@ if (custom.fullAPI) {
 
 // external 3rd party libraries
 window.Core.setExternalPath(resourceURL + 'external')
+window.Core.disableEmbeddedJavaScript();
 
 var currentDocId;
 
