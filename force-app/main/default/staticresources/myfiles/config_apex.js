@@ -172,7 +172,7 @@ function receiveMessage(event) {
         console.log(`${JSON.stringify(event.data)}`);
         instance.UI.openElements(['savedModal']);
         setTimeout(() => {
-          instance.closeElements(['savedModal', 'loadingModal'])
+          instance.UI.closeElements(['savedModal', 'loadingModal'])
         }, 2000)
         break;
       case 'LMS_RECEIVED':  
