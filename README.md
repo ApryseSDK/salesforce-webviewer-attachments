@@ -1,6 +1,6 @@
 # How to View, Edit, Annotate and Redact Salesforce Record Attachment Files in a Lightning Web Component
 
-## Note
+## Note on Salesforce deployment size limits
 Please note that maximum deployment size is capped to ~39MB - in some cases the WebViewer worker files stored in `/staticresources/` exceed that file size limit. If you are facing this error, please split up your deployments in multiple parts to adhere to this size limit.
 
 ### Example 1
