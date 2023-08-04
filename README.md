@@ -1,5 +1,13 @@
 # How to View, Edit, Annotate and Redact Salesforce Record Attachment Files in a Lightning Web Component
 
+## Quick Installation
+Required tools: [VS Code](https://code.visualstudio.com/download) + [Salesforce Extension](https://developer.salesforce.com/tools/vscode/en/vscode-desktop/install)
+
+* Clone the repository to your local and open it in VS Code with the [Salesforce Extension](https://developer.salesforce.com/tools/vscode/en/vscode-desktop/install) installed.
+* Authenticate your environment (you can follow this [example](https://trailhead.salesforce.com/content/learn/projects/quickstart-vscode-salesforce/use-vscode-for-salesforce))
+* Right-click on the `force-app` folder and select `SFDX: Deploy Source To Org`
+* Once deployed, navigate to a Lightning page, click Setup > `Edit Page` and drag and drop the `pdftronWvContainer` into the desired location of your Lightning page
+
 ## Note on Salesforce deployment size limits
 Please note that maximum deployment size is capped to ~39MB - in some cases the WebViewer worker files stored in `/staticresources/` exceed that file size limit. If you are facing this error, please split up your deployments in multiple parts to adhere to this size limit.
 
