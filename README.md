@@ -1,7 +1,7 @@
 # How to View, Edit, Annotate and Redact Salesforce Record Attachment Files in a Lightning Web Component
 
 ## Overview
-This repository is a ready-to-deploy Salesforce implementation of Apryse SDK's WebViewer. This LWC Component will have the ability to enable client-side viewing, editing, annotation and redaction of Salesforce files in your Salesforce environment.
+This repository is a ready-to-deploy Salesforce implementation of Apryse SDK's WebViewer. This LWC Component will have the ability to enable client-side viewing, editing, annotation and redaction and much more in your Salesforce environment using Salesforce or external files.
 
 ## Quick Installation
 Required tools: [VS Code](https://code.visualstudio.com/download) + [Salesforce Extension](https://developer.salesforce.com/tools/vscode/en/vscode-desktop/install)
