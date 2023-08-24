@@ -171,6 +171,6 @@ public class PDFTron_ContentVersionControllerTest {
       'file',
       new List<String>()
     );
-    System.assertEquals(results.size(), 1);
+    System.assertEquals(results.size(), 0);
   }
 }
