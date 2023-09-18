@@ -26,10 +26,10 @@ Your `/staticresources/` do not exceed the 39MB limit, but your total project is
 2. Deploy other Metadata types
 `sf project deploy start -m AuraDefinitionBundle ApexClass LightningComponentBundle LightningMessageChannel`
 
-## Guide
+### Guide
 This repository serves as the code-along sample for this [guide](https://www.pdftron.com/blog/webviewer/view-edit-annotate-and-redact-salesforce-record-attachments/).
 
-## Project Structure
+### Project Structure
 The Apryse SDK WebViewer integrates with Salesforce by using WebViewer's source files in Salesforce's `/staticresources/` - we leverage LWC to contain WebViewer UI inside of an iframe. We can use your browser's [postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage) API and leverage the main LWC component to communicate with other LWC components and use Apex to retrieve files, user information and other data from Salesforce to build a fully custom document workflow.
 
 ## Documentation
