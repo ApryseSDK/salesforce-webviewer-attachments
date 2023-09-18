@@ -4,8 +4,10 @@
 This repository is a ready-to-deploy Salesforce implementation of Apryse SDK's WebViewer. This LWC Component will have the ability to enable client-side viewing, editing, annotation and redaction and much more in your Salesforce environment using Salesforce files or external files.
 
 ## Quick Installation
+### Prerequisites
 Required tools: [VS Code](https://code.visualstudio.com/download) + [Salesforce Extension](https://developer.salesforce.com/tools/vscode/en/vscode-desktop/install)
 
+### Installation Steps
 * Clone the repository to your local and open it in VS Code with the [Salesforce Extension](https://developer.salesforce.com/tools/vscode/en/vscode-desktop/install) installed.
 * Authenticate your environment (you can follow this [example](https://trailhead.salesforce.com/content/learn/projects/quickstart-vscode-salesforce/use-vscode-for-salesforce))
 * Right-click on the `force-app` folder and select `SFDX: Deploy Source To Org` or use `sf project deploy start` in your terminal
