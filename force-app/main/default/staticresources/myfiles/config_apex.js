@@ -18,8 +18,11 @@ window.Core.setOfficeWorkerPath(resourceURL + 'office')
 window.Core.setOfficeAsmPath(resourceURL + 'office_asm');
 window.Core.setOfficeResourcePath(resourceURL + 'office_resource');
 
+// window.Core.setLegacyOfficeWorkerPath(resourceURL + 'legacyOffice');
+// window.Core.setLegacyOfficeAsmPath(resourceURL + 'legacyOffice_asm');
+// window.Core.setLegacyOfficeResourcePath(resourceURL + 'legacyOffice_resource');
 //office editing
-window.Core.setOfficeEditorWorkerPath(resourceURL + 'office_edit');
+// window.Core.setOfficeEditorWorkerPath(resourceURL + 'office_edit');
 
 // pdf workers
 window.Core.setPDFResourcePath(resourceURL + 'resource')
