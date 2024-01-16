@@ -1,7 +1,12 @@
 window.Core.forceBackendType('ems');
 
+var documentViewer = instance.Core.documentViewer;
+
 var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
+
+var version = ''
+resourceURL = resourceURL + custom.namespacePrefix + version;
 
 /**
  * The following `window.Core.set*` functions point WebViewer to the
@@ -12,6 +17,9 @@ var custom = JSON.parse(urlSearch.get('custom'));
 window.Core.setOfficeWorkerPath(custom.workers.office)
 window.Core.setOfficeAsmPath(custom.workers.office_asm);
 window.Core.setOfficeResourcePath(custom.workers.office_resource);
+
+//office editing
+window.Core.setOfficeEditorWorkerPath(resourceURL + 'office_edit');
 
 // pdf workers
 window.Core.setPDFResourcePath(custom.workers.resource)
@@ -39,10 +47,14 @@ async function saveDocument() {
   if (!doc) {
     return;
   }
-  instance.openElement('loadingModal');
+  instance.UI.openElement('loadingModal');
   const fileSize = await doc.getFileSize();
   const fileType = doc.getType();
-  const filename = doc.getFilename();
+  let filename = doc.getFilename();
+
+  if (fileType == 'image'){
+    filename = filename.replace(/\.[^/.]+$/, ".pdf")
+  }
   const xfdfString = await instance.Core.documentViewer.getAnnotationManager().exportAnnotations();
   const data = await doc.getFileData({
     // Saves the document with annotations in it
@@ -96,14 +108,30 @@ const downloadFile = (blob, fileName) => {
   setTimeout(() => URL.revokeObjectURL(link.href), 7000);
 };
 
-window.addEventListener('viewerLoaded', async function () {
-  instance.hotkeys.on('ctrl+s, command+s', e => {
+function createSavedModal(instance) {
+  const divInput = document.createElement('div');
+  divInput.innerText = 'File saved successfully.';
+  const modal = {
+    dataElement: 'savedModal',
+    body: {
+      className: 'myCustomModal-body',
+      style: {
+        'text-align': 'center'
+      },
+      children: [divInput]
+    }
+  }
+  instance.UI.addCustomModal(modal);
+}
+
+instance.UI.addEventListener('viewerLoaded', async function () {
+  instance.UI.hotkeys.on('ctrl+s, command+s', e => {
     e.preventDefault();
     saveDocument();
   });
 
   // Create a button, with a disk icon, to invoke the saveDocument function
-  instance.setHeaderItems(function (header) {
+  instance.UI.setHeaderItems(function (header) {
     var myCustomButton = {
       type: 'actionButton',
       dataElement: 'saveDocumentButton',
@@ -113,7 +141,7 @@ window.addEventListener('viewerLoaded', async function () {
         saveDocument();
       }
     }
-    header.get('viewControlsButton').insertBefore(myCustomButton);
+    header.push(myCustomButton);
   });
 
   // When the viewer has loaded, this makes the necessary call to get the
@@ -121,10 +149,12 @@ window.addEventListener('viewerLoaded', async function () {
   // to invoke annotManager.setCurrentUser
   instance.Core.documentViewer.getAnnotationManager().setCurrentUser(custom.username);
 
-  const annotationManager = await instance.Core.documentViewer.getAnnotationManager();
+  createSavedModal(instance);
 });
 
 window.addEventListener("message", receiveMessage, false);
+
+
 
 function receiveMessage(event) {
   if (event.isTrusted && typeof event.data === 'object') {
@@ -136,13 +166,13 @@ function receiveMessage(event) {
         const { blob, extension, filename, documentId } = event.data.payload;
         console.log("documentId", documentId);
         currentDocId = documentId;
-        instance.loadDocument(blob, { extension, filename, documentId })
+        instance.UI.loadDocument(blob, { extension, filename, documentId })
         break;
       case 'DOCUMENT_SAVED':
         console.log(`${JSON.stringify(event.data)}`);
-        instance.showErrorMessage('Document saved ')
+        instance.UI.openElements(['savedModal']);
         setTimeout(() => {
-          instance.closeElements(['errorModal', 'loadingModal'])
+          instance.UI.closeElements(['savedModal', 'loadingModal'])
         }, 2000)
         break;
       case 'LMS_RECEIVED':  
@@ -155,7 +185,7 @@ function receiveMessage(event) {
         downloadWebViewerFile();
         break;
       case 'CLOSE_DOCUMENT':
-        instance.closeDocument()
+        instance.UI.closeDocument()
         break;
       default:
         break;
