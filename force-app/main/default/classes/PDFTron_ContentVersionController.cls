@@ -38,10 +38,12 @@ public with sharing class PDFTron_ContentVersionController {
     public static Map<String, String> getWorkerFiles() {
         Map<String, String> workerPaths = new Map<String, String>();
         String resourcePath = '/resource/';
-        for(StaticResource sr : [SELECT Id, Name, SystemModStamp FROM StaticResource WHERE Name IN :workerFileName]) {
+        for(StaticResource sr : [SELECT Id, Name, SystemModStamp, NamespacePrefix FROM StaticResource WHERE Name IN :workerFileName]) {
+            String namespace = sr.NamespacePrefix;
             String urlFormat = resourcePath 
                                 + String.valueOf(sr.SystemModStamp.getTime())
                                 + '/'
+                                + (namespace != null && namespace != '' ? namespace + '__' : '')
                                 + sr.Name;
             workerPaths.put(sr.Name, urlFormat);
         }

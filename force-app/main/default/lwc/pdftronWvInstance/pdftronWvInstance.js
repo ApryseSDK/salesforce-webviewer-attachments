@@ -71,12 +71,11 @@ export default class PdftronWvInstance extends LightningElement {
       return;
     }
     workerFilePath().then((result) => { 
-      this.workerPath = result 
-    });
-
-    Promise.all([loadScript(self, libUrl + "/webviewer.min.js")])
+      this.workerPath = result;
+      Promise.all([loadScript(self, libUrl + "/webviewer.min.js")])
       .then(() => this.handleInitWithCurrentUser())
       .catch(console.error);
+    });
   }
 
   handleInitWithCurrentUser() {
@@ -95,6 +94,7 @@ export default class PdftronWvInstance extends LightningElement {
 
   initUI() {
     var myObj = {
+      myfilesUrl: myfilesUrl,
       libUrl: libUrl,
       fullAPI: this.fullAPI || false,
       namespacePrefix: "",
