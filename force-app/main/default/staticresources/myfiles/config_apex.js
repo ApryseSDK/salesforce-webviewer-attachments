@@ -24,11 +24,9 @@ window.Core.setOfficeEditorWorkerPath(resourceURL + 'office_edit');
 // pdf workers
 window.Core.setPDFResourcePath(resourceURL + 'resource')
 if (custom.fullAPI) {
-  window.Core.setPDFWorkerPath(resourceURL + 'pdf_full')
-  window.Core.setPDFAsmPath(resourceURL + 'asm_full');
+  window.Core.setPDFWorkerPath(resourceURL + 'pdf_full');
 } else {
   window.Core.setPDFWorkerPath(resourceURL + 'pdf_lean')
-  window.Core.setPDFAsmPath(resourceURL + 'asm_lean');
 }
 
 // external 3rd party libraries
