@@ -5,8 +5,7 @@ var documentViewer = instance.Core.documentViewer;
 
 var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
-var version = ''
-resourceURL = resourceURL + custom.namespacePrefix + version;
+var workerPaths = custom.workerPaths;
 
 /**
  * The following `window.Core.set*` functions point WebViewer to the
@@ -14,23 +13,23 @@ resourceURL = resourceURL + custom.namespacePrefix + version;
  * uploaded files stay under the 5mb limit
  */
 // office workers
-window.Core.setOfficeWorkerPath(resourceURL + 'office')
-window.Core.setOfficeAsmPath(resourceURL + 'office_asm');
-window.Core.setOfficeResourcePath(resourceURL + 'office_resource');
+window.Core.setOfficeWorkerPath(workerPaths['office'])
+window.Core.setOfficeAsmPath(workerPaths['office_asm']);
+window.Core.setOfficeResourcePath(workerPaths['office_resource']);
 
 //office editing
-window.Core.setOfficeEditorWorkerPath(resourceURL + 'office_edit');
+window.Core.setOfficeEditorWorkerPath(workerPaths['office_edit']);
 
 // pdf workers
-window.Core.setPDFResourcePath(resourceURL + 'resource')
+window.Core.setPDFResourcePath(workerPaths['resource'])
 if (custom.fullAPI) {
-  window.Core.setPDFWorkerPath(resourceURL + 'pdf_full');
+  window.Core.setPDFWorkerPath(workerPaths['pdf_full']);
 } else {
-  window.Core.setPDFWorkerPath(resourceURL + 'pdf_lean')
+  window.Core.setPDFWorkerPath(workerPaths['pdf_lean'])
 }
 
 // external 3rd party libraries
-window.Core.setExternalPath(resourceURL + 'external')
+window.Core.setExternalPath(workerPaths['external'])
 
 var currentDocId;
 

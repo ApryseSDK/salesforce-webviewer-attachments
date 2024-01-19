@@ -7,6 +7,7 @@ import { ShowToastEvent } from "lightning/platformShowToastEvent";
 import mimeTypes from "./mimeTypes";
 import { fireEvent, registerListener, unregisterAllListeners } from "c/pubsub";
 import saveDocument from "@salesforce/apex/PDFTron_ContentVersionController.saveDocument";
+import workerFilePath from "@salesforce/apex/PDFTron_ContentVersionController.getWorkerFiles";
 import getUser from "@salesforce/apex/PDFTron_ContentVersionController.getUser";
 
 function _base64ToArrayBuffer(base64) {
@@ -29,6 +30,7 @@ export default class PdftronWvInstance extends LightningElement {
 
   source = "My file";
   @api recordId;
+  @track workerPaths;
 
   @wire(CurrentPageReference)
   pageRef;
@@ -68,6 +70,9 @@ export default class PdftronWvInstance extends LightningElement {
     if (this.uiInitialized) {
       return;
     }
+    workerFilePath().then((result) => { 
+      this.workerPath = result 
+    });
 
     Promise.all([loadScript(self, libUrl + "/webviewer.min.js")])
       .then(() => this.handleInitWithCurrentUser())
@@ -93,7 +98,8 @@ export default class PdftronWvInstance extends LightningElement {
       libUrl: libUrl,
       fullAPI: this.fullAPI || false,
       namespacePrefix: "",
-      username: this.username
+      username: this.username,
+      workerPaths: this.workerPath
     };
     var url = myfilesUrl + "/webviewer-demo-annotated.pdf";
 

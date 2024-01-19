@@ -18,6 +18,36 @@ public with sharing class PDFTron_ContentVersionController {
         'xlsx'
     };
 
+    static set<String> workerFileName = new Set<String> {
+        'content_edit_resource',
+        'content_edit',
+        'external',
+        'legacyOffice_asm',
+        'legacyOffice_resource',
+        'legacyOffice',
+        'lib',
+        'office_asm',
+        'office_edit',
+        'office_resource',
+        'office',
+        'pdf_full',
+        'resource'
+    };
+    
+    @AuraEnabled
+    public static Map<String, String> getWorkerFiles() {
+        Map<String, String> workerPaths = new Map<String, String>();
+        String resourcePath = '/resource/';
+        for(StaticResource sr : [SELECT Id, Name, SystemModStamp FROM StaticResource WHERE Name IN :workerFileName]) {
+            String urlFormat = resourcePath 
+                                + String.valueOf(sr.SystemModStamp.getTime())
+                                + '/'
+                                + sr.Name;
+            workerPaths.put(sr.Name, urlFormat);
+        }
+        return workerPaths;
+    }
+
     @AuraEnabled
     public static string getUser() {
         try {
