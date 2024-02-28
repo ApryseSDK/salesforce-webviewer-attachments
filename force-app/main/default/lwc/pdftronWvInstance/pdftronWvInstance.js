@@ -157,6 +157,15 @@ export default class PdftronWvInstance extends LightningElement {
     }
   };
 
+  showNotification(title, message, variant) {
+    const evt = new ShowToastEvent({
+      title: title,
+      message: message,
+      variant: variant
+    });
+    this.dispatchEvent(evt);
+  }
+
   downloadDocument() {
     this.iframeWindow.postMessage({ type: "DOWNLOAD_DOCUMENT" }, "*");
   }
