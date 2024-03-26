@@ -21,6 +21,9 @@ window.Core.setOfficeResourcePath(resourceURL + 'office_resource');
 //office editing
 window.Core.setOfficeEditorWorkerPath(resourceURL + 'office_edit');
 
+window.Core.ContentEdit.setWorkerPath(resourceURL + 'content_edit');
+window.Core.ContentEdit.setResourcePath(resourceURL + 'content_edit_resource');
+
 // pdf workers
 window.Core.setPDFResourcePath(resourceURL + 'resource')
 if (custom.fullAPI) {
@@ -146,6 +149,7 @@ instance.UI.addEventListener('viewerLoaded', async function () {
   // pdftronWvInstance code to pass User Record information to this config file
   // to invoke annotManager.setCurrentUser
   instance.Core.documentViewer.getAnnotationManager().setCurrentUser(custom.username);
+  instance.UI.enableFeatures([instance.UI.Feature.ContentEdit]);
 
   createSavedModal(instance);
 });
