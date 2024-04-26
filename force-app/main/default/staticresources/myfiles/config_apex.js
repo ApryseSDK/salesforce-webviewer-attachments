@@ -9,6 +9,10 @@ var version = ''
 resourceURL = resourceURL + custom.namespacePrefix + version;
 
 /**
+ * This is loaded from the UI needing the back ticks to load the correct path
+ */
+window.Core.setFontPath('../../../..' + resourceURL + 'font_assets/fonts');
+/**
  * The following `window.Core.set*` functions point WebViewer to the
  * optimized source code specific for the Salesforce platform, to ensure the
  * uploaded files stay under the 5mb limit
