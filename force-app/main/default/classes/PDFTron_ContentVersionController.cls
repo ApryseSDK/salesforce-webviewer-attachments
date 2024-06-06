@@ -56,8 +56,6 @@ public with sharing class PDFTron_ContentVersionController {
                 //retrieve and delete original document
                 List<ContentDocument> originalDocument = [SELECT Id FROM ContentDocument WHERE Id = :cvList[0].ContentDocumentId];
                 newCvId = cvList[0].ContentDocumentId;
-                
-                // if(originalDocument.size() > 0) delete originalDocument;
             } else {
                 System.debug('Could not retrieve record for ' + cvId);
             }
