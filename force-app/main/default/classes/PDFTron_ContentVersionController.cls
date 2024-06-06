@@ -47,6 +47,7 @@ public with sharing class PDFTron_ContentVersionController {
             //parse annotated document payload and create new ContentVersion
             PDFTron_ContentVersionPayload pl = new PDFTron_ContentVersionPayload(json);
             ContentVersion annotatedCv = new ContentVersion();
+            Id newCvId; 
 
             //retrieve original document before annotation
             List<ContentVersion> cvList = [SELECT ContentDocumentId FROM ContentVersion WHERE Id = :cvId];
@@ -54,12 +55,15 @@ public with sharing class PDFTron_ContentVersionController {
             if(cvList.size() == 1) {
                 //retrieve and delete original document
                 List<ContentDocument> originalDocument = [SELECT Id FROM ContentDocument WHERE Id = :cvList[0].ContentDocumentId];
+                newCvId = cvList[0].ContentDocumentId;
                 
-                if(originalDocument.size() > 0) delete originalDocument;
+                // if(originalDocument.size() > 0) delete originalDocument;
             } else {
                 System.debug('Could not retrieve record for ' + cvId);
             }
             //build document blob
+            annotatedCv.ContentLocation = 'S';
+            annotatedCv.ContentDocumentId = newCvId;
             annotatedCv.VersionData = EncodingUtil.base64Decode(pl.base64Data);
             annotatedCv.Title = pl.title;
             annotatedCv.PathOnClient = pl.filename;

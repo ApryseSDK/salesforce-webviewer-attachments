@@ -68,6 +68,7 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
     const lookup = this.template.querySelector("c-lookup");
     if (lookup) {
       lookup.setDefaultResults(this.attachments);
+      lookup.setSearchResults(this.attachments);
     }
   }
 
