@@ -15,7 +15,7 @@ resourceURL = resourceURL + custom.namespacePrefix + version;
  */
 
 // font workers
-window.Core.setFontPath('../../../..' + resourceURL + 'font_assets/fonts');
+instance.UI.setFontPath('../../../..' + resourceURL + 'font_assets/fonts');
 
 // office workers
 window.Core.setOfficeWorkerPath(resourceURL + 'office')
