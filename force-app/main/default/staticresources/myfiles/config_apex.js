@@ -13,6 +13,10 @@ resourceURL = resourceURL + custom.namespacePrefix + version;
  * optimized source code specific for the Salesforce platform, to ensure the
  * uploaded files stay under the 5mb limit
  */
+
+// font workers
+window.Core.setFontPath('../../../..' + resourceURL + 'font_assets/fonts');
+
 // office workers
 window.Core.setOfficeWorkerPath(resourceURL + 'office')
 window.Core.setOfficeAsmPath(resourceURL + 'office_asm');
