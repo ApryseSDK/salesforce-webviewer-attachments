@@ -171,13 +171,13 @@ public with sharing class PDFTron_ContentVersionController {
         List<LookupSearchResult> results = new List<LookupSearchResult>();
 
         for (ContentVersion cv : [
-            SELECT Title, FileExtension, LastModifiedDate, ContentSize, LastModifiedBy.Alias
+            SELECT Title, FileExtension, LastModifiedDate, ContentSize, IsLatest, LastModifiedBy.Alias
             FROM ContentVersion
             WHERE Title LIKE :searchTerm
             ORDER BY LastModifiedDate DESC
         ]) {
             System.debug(cv);
-            if(checkFileExtension(cv.FileExtension)) {
+            if(checkFileExtension(cv.FileExtension) && cv.IsLatest == 'true') {
                 String subtitle = 'Modified ' + cv.LastModifiedDate + ' by ' + cv.LastModifiedBy.Alias;
                 results.add(new LookupSearchResult(cv.Id, 'ContentVersion', getFileLogo(cv.FileExtension), cv.Title + '.' + cv.FileExtension + ' (' + convertBytesToFormattedString(cv.ContentSize) + ')', subtitle));
             }

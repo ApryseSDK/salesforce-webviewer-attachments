@@ -20,6 +20,7 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
   @api recordId;
   @track attachments = [];
   @wire(CurrentPageReference) pageRef;
+  hasRecord = false;
 
   renderedCallback() {
     this.hasRecord = this.recordId ? true : false;
@@ -76,6 +77,7 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
     const lookupElement = event.target;
     apexSearch(event.detail)
       .then((results) => {
+        lookupElement.setDefaultResults(results);
         lookupElement.setSearchResults(results);
       })
       .catch((error) => {
@@ -143,9 +145,16 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
   }
 
   handleUploadFinished() {
+    let successPrompt;
+    if (this.hasRecord) {
+      successPrompt = "Your file has been attached to " + this.recordId;
+    } else {
+      successPrompt = "Your file has been attached to a new record";
+    }
+
     this.showNotification(
       "Success",
-      "Your file has been attached to " + this.recordId,
+      successPrompt,
       "success"
     );
     this.refreshOnSave();
@@ -153,20 +162,22 @@ export default class PdftronAttachmentPickerCombobox extends LightningElement {
 
   refreshOnSave() {
     this.loadFinished = false;
-    getAttachments({ recordId: this.recordId })
-      .then((data) => {
-        this.attachments = data;
-        this.initLookupDefaultResults();
+    if (this.hasRecord){
+      getAttachments({ recordId: this.recordId })
+        .then((data) => {
+          this.attachments = data;
+          this.initLookupDefaultResults();
 
-        this.error = undefined;
-        this.loadFinished = true;
-        this.documentsRetrieved = true;
-      })
-      .catch((error) => {
-        console.error(error);
-        this.showNotification("Error", error, "error");
-        this.error = error;
-      });
+          this.error = undefined;
+          this.loadFinished = true;
+          this.documentsRetrieved = true;
+        })
+        .catch((error) => {
+          console.error(error);
+          this.showNotification("Error", error, "error");
+          this.error = error;
+        });
+      }
   }
 
   handleDownload() {
