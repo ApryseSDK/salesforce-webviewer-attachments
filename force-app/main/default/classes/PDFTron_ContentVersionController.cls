@@ -83,35 +83,6 @@ public with sharing class PDFTron_ContentVersionController {
             throw new AuraHandledException(e.getMessage());
         }
     }
-    
-    @AuraEnabled
-    public static List<ContentVersionWrapper> getAttachments(String recordId){
-        try {
-            List<String> cdIdList = new List<String> ();
-            List<ContentVersionWrapper> cvwList = new List<ContentVersionWrapper> ();
-
-            //Find links between record & document
-            for(ContentDocumentLink cdl : 
-                    [   SELECT id, ContentDocumentId, ContentDocument.LatestPublishedVersionId 
-                        FROM ContentDocumentLink 
-                        WHERE LinkedEntityId = :recordId    ]) {
-                cdIdList.add(cdl.ContentDocumentId);
-            }
-            //Use links to get attachments
-            for(ContentVersion cv : 
-                    [   SELECT Id, Title,FileExtension, VersionData, ContentDocumentId 
-                        FROM ContentVersion 
-                        WHERE ContentDocumentId IN :cdIdList 
-                        AND IsLatest = true ]) {
-                if(checkFileExtension(cv.FileExtension)) {
-                    cvwList.add(new ContentVersionWrapper(cv, false));
-                }
-            }
-            return cvwList;
-        } catch (Exception e) {
-            throw new AuraHandledException(e.getMessage());
-        }
-    }
 
     //get single file from Id
     @AuraEnabled(Cacheable=true) 
@@ -144,14 +115,14 @@ public with sharing class PDFTron_ContentVersionController {
             }
             //Use links to get attachments
             for(ContentVersion cv : 
-                    [   SELECT Id, Title,FileExtension, VersionData, ContentDocumentId, LastModifiedDate, LastModifiedBy.Alias, ContentSize
+                    [   SELECT Id, Title, FileExtension, VersionData, ContentDocumentId, LastModifiedDate, LastModifiedBy.Alias, ContentSize, IsLatest
                         FROM ContentVersion 
                         WHERE ContentDocumentId IN :cdIdList 
                         AND IsLatest = true 
                         ORDER BY LastModifiedDate DESC
                         LIMIT 10    ]) 
             {            
-                if(checkFileExtension(cv.FileExtension)) {
+                if(checkFileExtension(cv.FileExtension) && cv.IsLatest) {
                     String subtitle = 'Modified ' + cv.LastModifiedDate + ' by ' + cv.LastModifiedBy.Alias;
                     results.add(new LookupSearchResult(cv.Id, 'ContentVersion', getFileLogo(cv.FileExtension), cv.Title + '.' + cv.FileExtension + ' (' + convertBytesToFormattedString(cv.ContentSize) + ')', subtitle));
                 }
@@ -177,7 +148,7 @@ public with sharing class PDFTron_ContentVersionController {
             ORDER BY LastModifiedDate DESC
         ]) {
             System.debug(cv);
-            if(checkFileExtension(cv.FileExtension) && cv.IsLatest == 'true') {
+            if(checkFileExtension(cv.FileExtension) && cv.IsLatest) {
                 String subtitle = 'Modified ' + cv.LastModifiedDate + ' by ' + cv.LastModifiedBy.Alias;
                 results.add(new LookupSearchResult(cv.Id, 'ContentVersion', getFileLogo(cv.FileExtension), cv.Title + '.' + cv.FileExtension + ' (' + convertBytesToFormattedString(cv.ContentSize) + ')', subtitle));
             }
