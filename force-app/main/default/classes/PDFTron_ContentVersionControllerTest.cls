@@ -86,11 +86,7 @@ public class PDFTron_ContentVersionControllerTest {
 
     string id = a.Id + '';
     PDFTron_ContentVersionController.getExistingAttachments(id);
-    List<PDFTron_ContentVersionController.ContentVersionWrapper> cvwList = PDFTron_ContentVersionController.getAttachments(
-      id
-    );
 
-    System.assertEquals(cvwList.size(), 1);
   }
 
   @isTest

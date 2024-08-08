@@ -5,6 +5,7 @@ var documentViewer = instance.Core.documentViewer;
 
 var urlSearch = new URLSearchParams(location.hash)
 var custom = JSON.parse(urlSearch.get('custom'));
+
 var version = ''
 resourceURL = resourceURL + custom.namespacePrefix + version;
 
@@ -15,29 +16,29 @@ resourceURL = resourceURL + custom.namespacePrefix + version;
  */
 
 // font workers
-instance.UI.setFontPath('../../../..' + resourceURL + 'font_assets/fonts');
+instance.UI.setFontPath('../../../../../../..' + custom.workers.font_assets + '/fonts');
 
 // office workers
-window.Core.setOfficeWorkerPath(resourceURL + 'office')
-window.Core.setOfficeAsmPath(resourceURL + 'office_asm');
-window.Core.setOfficeResourcePath(resourceURL + 'office_resource');
+window.Core.setOfficeWorkerPath(custom.workers.office);
+window.Core.setOfficeAsmPath(custom.workers.office_asm);
+window.Core.setOfficeResourcePath(custom.workers.office_resource);
 
 //office editing
-window.Core.setOfficeEditorWorkerPath(resourceURL + 'office_edit');
+window.Core.setOfficeEditorWorkerPath(custom.workers.office_edit);
 
-window.Core.ContentEdit.setWorkerPath(resourceURL + 'content_edit');
-window.Core.ContentEdit.setResourcePath(resourceURL + 'content_edit_resource');
+window.Core.ContentEdit.setWorkerPath(custom.workers.content_edit);
+window.Core.ContentEdit.setResourcePath(custom.workers.content_edit_resource);
 
 // pdf workers
-window.Core.setPDFResourcePath(resourceURL + 'resource')
+window.Core.setPDFResourcePath(custom.workers.resource)
 if (custom.fullAPI) {
-  window.Core.setPDFWorkerPath(resourceURL + 'pdf_full');
+  window.Core.setPDFWorkerPath(custom.workers.pdf_full);
 } else {
-  window.Core.setPDFWorkerPath(resourceURL + 'pdf_lean')
+  window.Core.setPDFWorkerPath(custom.workers.pdf_lean)
 }
 
 // external 3rd party libraries
-window.Core.setExternalPath(resourceURL + 'external')
+window.Core.setExternalPath(custom.workers.external)
 
 var currentDocId;
 

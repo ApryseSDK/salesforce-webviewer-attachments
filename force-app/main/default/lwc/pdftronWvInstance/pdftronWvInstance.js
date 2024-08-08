@@ -8,6 +8,17 @@ import mimeTypes from "./mimeTypes";
 import { fireEvent, registerListener, unregisterAllListeners } from "c/pubsub";
 import saveDocument from "@salesforce/apex/PDFTron_ContentVersionController.saveDocument";
 import getUser from "@salesforce/apex/PDFTron_ContentVersionController.getUser";
+import external from "@salesforce/resourceUrl/external";
+import office_asm from "@salesforce/resourceUrl/office_asm";
+import office_resource from "@salesforce/resourceUrl/office_resource";
+import office from "@salesforce/resourceUrl/office";
+import pdf_full from "@salesforce/resourceUrl/pdf_full";
+import resource from "@salesforce/resourceUrl/resource";
+import content_edit from "@salesforce/resourceUrl/content_edit";
+import content_edit_resource from "@salesforce/resourceUrl/content_edit_resource";
+import office_edit from "@salesforce/resourceUrl/office_edit";
+import font_assets from "@salesforce/resourceUrl/font_assets";
+
 
 function _base64ToArrayBuffer(base64) {
   var binary_string = window.atob(base64);
@@ -93,8 +104,22 @@ export default class PdftronWvInstance extends LightningElement {
       libUrl: libUrl,
       fullAPI: this.fullAPI || false,
       namespacePrefix: "",
-      username: this.username
+      username: this.username,
+      workers: {
+        external: external,
+        office_asm: office_asm,
+        office_resource: office_resource,
+        office: office,
+        pdf_full: pdf_full,
+        resource: resource,
+        content_edit: content_edit,
+        content_edit_resource: content_edit_resource,
+        office_edit: office_edit,
+        font_assets: font_assets
+      }
     };
+
+    console.log(font_assets);
     var url = myfilesUrl + "/webviewer-demo-annotated.pdf";
 
     const viewerElement = this.template.querySelector("div");
