@@ -84,6 +84,35 @@ public with sharing class PDFTron_ContentVersionController {
         }
     }
 
+    @AuraEnabled
+    public static List<ContentVersionWrapper> getAttachments(String recordId){
+        try {
+            List<String> cdIdList = new List<String> ();
+            List<ContentVersionWrapper> cvwList = new List<ContentVersionWrapper> ();
+
+            //Find links between record & document
+            for(ContentDocumentLink cdl : 
+                    [   SELECT id, ContentDocumentId, ContentDocument.LatestPublishedVersionId 
+                        FROM ContentDocumentLink 
+                        WHERE LinkedEntityId = :recordId    ]) {
+                cdIdList.add(cdl.ContentDocumentId);
+            }
+            //Use links to get attachments
+            for(ContentVersion cv : 
+                    [   SELECT Id, Title,FileExtension, VersionData, ContentDocumentId 
+                        FROM ContentVersion 
+                        WHERE ContentDocumentId IN :cdIdList 
+                        AND IsLatest = true ]) {
+                if(checkFileExtension(cv.FileExtension)) {
+                    cvwList.add(new ContentVersionWrapper(cv, false));
+                }
+            }
+            return cvwList;
+        } catch (Exception e) {
+            throw new AuraHandledException(e.getMessage());
+        }
+    }
+
     //get single file from Id
     @AuraEnabled(Cacheable=true) 
     public static ContentVersionWrapper getFileDataFromId(String Id) {
