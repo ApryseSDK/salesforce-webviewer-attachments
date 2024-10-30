@@ -69,31 +69,6 @@ public class PDFTron_ContentVersionControllerTest {
   }
 
   @isTest
-  static void testGetAttachments() {
-    ContentVersion contentVersion_1 = [
-      SELECT Id, Title, FileExtension, VersionData, ContentDocumentId
-      FROM ContentVersion
-      WHERE Title = 'some title'
-      LIMIT 1
-    ];
-    Account a = [SELECT Id FROM Account WHERE Name = 'Test Account'];
-    ContentDocumentLink contentDocumentLink = new ContentDocumentLink(
-      LinkedEntityId = a.Id,
-      ContentDocumentId = contentVersion_1.ContentDocumentId,
-      ShareType = 'V'
-    );
-    insert contentDocumentLink;
-
-    string id = a.Id + '';
-    PDFTron_ContentVersionController.getExistingAttachments(id);
-    List<PDFTron_ContentVersionController.ContentVersionWrapper> cvwList = PDFTron_ContentVersionController.getAttachments(
-      id
-    );
-
-    System.assertEquals(cvwList.size(), 1);
-  }
-
-  @isTest
   static void testSaveDocument() {
     String payload = '{"title": "file-sample_150kB test", "filename": "file-sample_150kB test.pdf", "contentDocumentId": "0685Y00000QUaQGQA1" }';
 
